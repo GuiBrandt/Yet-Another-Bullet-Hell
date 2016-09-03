@@ -378,9 +378,9 @@ var Graphics = {
     //      obj     : Objeto do qual apagar o sprite
     //-----------------------------------------------------------------------
     removeSprite: function(obj) {
-        obj.sprite.visible = false;
         this._stage.removeChild(obj.sprite);
-        obj.sprite.destroy();
+        if (!!obj.sprite.graphicsData)
+            obj.sprite.destroy();
     }
 };
 Object.defineProperties(Graphics, {
@@ -406,3 +406,34 @@ Object.defineProperties(Graphics, {
         }
     }
 });
+//=============================================================================
+// ** AudioManager
+//-----------------------------------------------------------------------------
+// Controla a parte sonora do jogo
+//=============================================================================
+var AudioManager = {
+    //-----------------------------------------------------------------------
+    // * Propriedades privadas
+    //-----------------------------------------------------------------------
+    _bgmList: [
+        "audio/badapple.mp3",
+        "audio/tetris.mp3",
+        "audio/megalovania.mp3",
+    ],
+    //-----------------------------------------------------------------------
+    // * Inicializa o áudio
+    //-----------------------------------------------------------------------
+    initialize: function() {
+        this._bgm = new Audio(this._bgmList[0]);
+        this._bgmNumber = 0;
+        this._bgm.addEventListener('ended', function() {
+            this._bgmNumber++;
+            this._bgmNumber %= this._bgmList.length;
+            this._bgm.src = this._bgmList[this._bgmNumber];
+            this._bgm.pause();
+            this._bgm.load();
+            this._bgm.play();
+        }.bind(this));
+        this._bgm.play();
+    }
+};

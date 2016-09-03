@@ -7,6 +7,7 @@
 
 // Inicialização
 Graphics.initialize();
+AudioManager.initialize();
 Game.start();
 
 // Loop principal
