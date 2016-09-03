@@ -364,7 +364,7 @@ Object.defineProperties(Graphics, {
         get: function() { return this._canvas.style.backgroundColor; },
         set: function(value) {
             __checkType(value, 'number', 'value');
-            var c = value.toString(16),
+            var c = value.toString(16);
             this._canvas.style.backgroundColor = '#' + 
                 "000000".substring(0, 6 - c.length) + c;
         }
