@@ -142,18 +142,15 @@ var Game = {
             this._pause = false;
 
         if (!this._pause)
-            this._objects.forEach(function (obj) {        
-                    obj.update();
-            });
+            this.forEachObject(function (obj) { obj.update(); });
     },
     //-----------------------------------------------------------------------
     // * Recomeça o estágio atual
     //-----------------------------------------------------------------------
     restart: function() {
         this.currentStage.terminate();
-        this._objects.forEach(function (obj) { obj.dispose(); });
+        this.forEachObject(function (obj) { obj.dispose(); });
         this.clear();
-        Graphics.clear();
         this.start();
     },
     //-----------------------------------------------------------------------
@@ -168,9 +165,6 @@ var Game = {
     setupStage: function() {
         if (!!this.currentStage) {
             Graphics.backgroundColor = this.currentStage.backgroundColor
-            this._objects.forEach(function (obj) { 
-                obj.updateSpriteColor();
-            });
             this.currentStage.initialize();
         } else
             this.nextStage();
@@ -223,7 +217,6 @@ var Game = {
     //-----------------------------------------------------------------------
     createActionPattern: function(name, events) {
         __checkType(name, 'string', 'name');
-        //__checkType(events, 'object', 'events');
 
         this._actionPatterns[name] = new GameActions(events);
         return this._actionPatterns[name];
@@ -292,14 +285,12 @@ var Game = {
     add: function(obj) {
         __checkClass(obj, GameObject, 'obj');
         this._objects.push(obj);
-        Graphics.createSprite(obj);
     },
     //-----------------------------------------------------------------------
     // * Remove um objeto do jogo
     //-----------------------------------------------------------------------
     remove: function(obj) {
         __checkClass(obj, GameObject, 'obj');
-        Graphics.removeSprite(obj);
         this._objects.remove(obj);
     },
     //-----------------------------------------------------------------------
@@ -307,7 +298,8 @@ var Game = {
     //      callback    : Função a ser chamada
     //-----------------------------------------------------------------------
     forEachObject: function(callback) {
-        this._objects.forEach(callback);
+        for (var i = 0; i < this._objects.length; i++)
+            callback.call(null, this._objects[i]);
     }
 };
 Object.defineProperties(Game, {
@@ -327,60 +319,30 @@ var Graphics = {
     // * Inicializa a parte gráfica do jogo
     //-----------------------------------------------------------------------
     initialize: function() {
-        this._renderer = new PIXI.CanvasRenderer(640, 480);
-        this._canvas = this._renderer.view;
+        this._canvas = document.createElement('canvas');
+        this.width = 640;
+        this.height = 480;
         this._canvas.id = "GameCanvas";
-        this._stage = new PIXI.Container();
+        this._context = this._canvas.getContext('2d');
         document.body.appendChild(this._canvas);
     },
     //-----------------------------------------------------------------------
     // * Desenha tudo na tela
     //-----------------------------------------------------------------------
     update: function() {
-        this._renderer.render(this._stage);
-    },
-    //-----------------------------------------------------------------------
-    // * Limpa os sprites
-    //-----------------------------------------------------------------------
-    clear: function() {
-        for (var i = this._stage.children.length - 1; i >= 0; i--) {  
-            this._stage.removeChild(this._stage.children[i]);
-        };
-    },
-    //-----------------------------------------------------------------------
-    // * Cria o sprite de um objeto na tela
-    //      obj     :  Objeto para o qual criar o sprite
-    //-----------------------------------------------------------------------
-    createSprite: function(obj) {
-        var rect = new PIXI.Graphics();
-
-        obj.sprite = rect;
-
-        rect.redraw = function(w, h) {
-            rect.clear();
-            rect.beginFill(obj.color);
-            rect.drawRect(0, 0, w, h);
-            rect.endFill();
-        };
-
-        obj.updateSpriteColor();
-
-        if (obj.color == null || obj.color == undefined)
-            return obj.dispose();
-
-        rect.x = obj.hitbox.left;
-        rect.y = obj.hitbox.top;
-
-        this._stage.addChild(rect);
-    },
-    //-----------------------------------------------------------------------
-    // * Apaga o sprite de um objeto
-    //      obj     : Objeto do qual apagar o sprite
-    //-----------------------------------------------------------------------
-    removeSprite: function(obj) {
-        this._stage.removeChild(obj.sprite);
-        if (!!obj.sprite.graphicsData)
-            obj.sprite.destroy();
+        this._context.clearRect(0, 0, this.width, this.height)
+        Game.forEachObject(function(obj) {
+            var c = obj.color.toString(16),
+                s = '#' + "000000".substring(0, 6 - c.length) + c;
+            if (s != this._context.fillStyle)
+                this._context.fillStyle = s;
+            this._context.fillRect(
+                obj.hitbox.left, 
+                obj.hitbox.top,
+                obj.hitbox.width,
+                obj.hitbox.height
+            );
+        }.bind(this));
     }
 };
 Object.defineProperties(Graphics, {
@@ -388,21 +350,21 @@ Object.defineProperties(Graphics, {
         get: function() { return this._canvas.width; },
         set: function(value) {
             __checkType(value, 'number', 'value');
-            this._renderer.resize(value, this.height);
+            this._canvas.width = value;
         }
     },
     height: {
         get: function() { return this._canvas.height; },
         set: function(value) {
             __checkType(value, 'number', 'value');
-            this._renderer.resize(this.width, value);
+            this._canvas.height = value;
         }
     },
     backgroundColor: {
-        get: function() { return this._renderer.backgroundColor; },
+        get: function() { return this._canvas.style.backgroundColor; },
         set: function(value) {
             __checkType(value, 'number', 'value');
-            this._renderer.backgroundColor = value;
+            this._canvas.style.backgroundColor = '#' + value.toString(16);
         }
     }
 });
