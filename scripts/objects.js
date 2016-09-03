@@ -5,10 +5,6 @@
 //=============================================================================
 "use strict";
 //=============================================================================
-// Globais
-//=============================================================================
-var $gameObjects;
-//=============================================================================
 // ** Hitbox
 //-----------------------------------------------------------------------------
 // Classe da caixa de colisão dos objetos do jogo
@@ -176,12 +172,11 @@ __class('GameObject', null, {
     //-----------------------------------------------------------------------
     initialize: function(x, y, movement) {
         this._hitbox = new Hitbox(x, y, 1, 1);
+        if (typeof movement == 'string')
+            movement = Game.movement(movement);
         __checkClass(movement, Movement, 'movement');
         this._movement = movement.bind(this);
-        
         this._sprite = null;
-
-        addObject(this);
     },
     //-----------------------------------------------------------------------
     // * Atualização do objeto
@@ -197,30 +192,30 @@ __class('GameObject', null, {
     //-----------------------------------------------------------------------
     updateSpriteColor: function() {
         if (this instanceof Player)
-            this._sprite.color = $gameStages[$stage].playerColor;
+            this._sprite.color = Game.currentStage.playerColor;
         else if (this instanceof Enemy)
-            this._sprite.color = $gameStages[$stage].enemyColor;
+            this._sprite.color = Game.currentStage.enemyColor;
         else if (this instanceof Projectile && this._shooter instanceof Player)
-            this._sprite.color = $gameStages[$stage].playerProjectileColor;
+            this._sprite.color = Game.currentStage.playerProjectileColor;
         else if (this instanceof Projectile && this._shooter instanceof Enemy)
-            this._sprite.color = $gameStages[$stage].enemyProjectileColor;
+            this._sprite.color = Game.currentStage.enemyProjectileColor;
         this._sprite.redraw(this.hitbox.width, this.hitbox.height);
     },
     //-----------------------------------------------------------------------
     // * Verifica se o objeto deveria ser apagado
     //-----------------------------------------------------------------------
     _checkDispose: function() {
-        if (!this.hitbox.x.between(0, $canvas.width - 1) || 
-            !this.hitbox.y.between(0, $canvas.height - 1))
+        if (!this.hitbox.x.between(0, Graphics.width - 1) || 
+            !this.hitbox.y.between(0, Graphics.height - 1))
                 this.dispose();
     },
     //-----------------------------------------------------------------------
     // * Apaga o objeto
     //-----------------------------------------------------------------------
     dispose: function() {
-        $gameObjects.remove(this);
-        if (!!this._sprite)
-            $scene.removeChild(this._sprite);
+        Game.remove(this);
+        //if (!!this._sprite)
+        //    Graphics.remove(this._sprite);
     }
 }, {
     //-----------------------------------------------------------------------
@@ -372,6 +367,7 @@ __class('Movement', 'Bindable', {
             __checkClass(velocities, Array);
             this._velocities = velocities;
         }
+        this._onUpdateSrc = null;
         this._onUpdate = null;
     },
     //-----------------------------------------------------------------------
@@ -391,8 +387,8 @@ __class('Movement', 'Bindable', {
     //-----------------------------------------------------------------------
     bind: function(object) {
         var bound = this.__super__.bind.call(this, object);
-        if (!!bound._onUpdate)
-            bound._onUpdate = bound._onUpdate.bind(object);
+        if (!!this._onUpdateSrc)
+            bound.onUpdate = this._onUpdateSrc;
         return bound;
     },
     //-----------------------------------------------------------------------
@@ -410,6 +406,7 @@ __class('Movement', 'Bindable', {
         get: function() { return this._onUpdate; },
         set: function(value) {
             __checkType(value, 'function', 'value');
+            this._onUpdateSrc = value;
             this._onUpdate = value.bind(this);
         }
     }
@@ -440,11 +437,11 @@ __class('Projectile', 'GameObject', {
     update: function() {
         this.__super__.update.call(this);
 
-        $gameObjects.forEach(function(obj) {
+        Game.forEachObject(function(obj) {
             if (this._shooter instanceof Enemy) {
                 if (obj instanceof Player &&
                         this._hitbox.collidesWith(obj.hitbox)) {
-                            setTimeout(restart, 20);
+                            setTimeout(Game.restart.bind(Game), 20);
                             this.dispose();
                         }
             } else {
@@ -454,7 +451,6 @@ __class('Projectile', 'GameObject', {
                             this.dispose();
                         }
             }
-
         }.bind(this));
     }
 }, {
@@ -485,6 +481,9 @@ __class('Enemy', 'GameObject', {
         this._hitbox.width = this._hitbox.height = 10;
 
         __checkType(health, 'number', 'health');
+
+        __checkType(actions, 'string', 'actions');
+        actions = Game.actionPattern(actions);
         __checkClass(actions, GameActions, 'actions');
         
         this._health = health;
@@ -566,7 +565,7 @@ __class('Player', 'GameObject', {
     //      y   : Coordenada Y do jogador
     //-----------------------------------------------------------------------
     initialize: function(x, y) {
-        this.__super__.initialize.call(this, x, y, $gameMovements['player']);
+        this.__super__.initialize.call(this, x, y, 'player');
         this._fireTimer = 0;
         this._hitbox.width = this._hitbox.height = 8;
     },
@@ -578,19 +577,19 @@ __class('Player', 'GameObject', {
 
         if (this._hitbox.left < 0)
             this._hitbox.left = 0;
-        if (this._hitbox.right > $canvas.width)
-            this._hitbox.right = $canvas.width;
+        if (this._hitbox.right > Graphics.width)
+            this._hitbox.right = Graphics.width;
         if (this._hitbox.top < 0)
             this._hitbox.top = 0;
-        if (this._hitbox.bottom > $canvas.height)
-            this._hitbox.bottom = $canvas.height;
+        if (this._hitbox.bottom > Graphics.height)
+            this._hitbox.bottom = Graphics.height;
 
         if (Input.actionPressed()) {
             this._fireTimer %= 6;
             if (this._fireTimer++ == 0)
-                new Projectile(
+                Game.createProjectile(
                     this.hitbox.x, this.hitbox.y, 
-                    $gameMovements['straightUp'], 
+                    'straightUp', 
                     this
                 );
         } else if (this._fireTimer > 0)

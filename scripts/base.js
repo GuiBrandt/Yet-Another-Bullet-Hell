@@ -29,6 +29,7 @@ function __class(name, _super, proto, props) {
 
         window[name].prototype = Object.create(window[_super].prototype);
         window[name].prototype.__super__ = window[_super].prototype;
+        window[name].prototype.constructor = window[name];
         for (var property in proto)
             window[name].prototype[property] = proto[property];
     } else
@@ -76,15 +77,18 @@ Number.prototype.between = function(a, b) {
 // * Retorna um clone do objeto
 //-----------------------------------------------------------------------------
 Object.prototype.clone = function() {
+    var clone = Object.create(this);
     if (this instanceof Array) {
-        var clone = [];
-
-        for (var i = 0; i < this.length; i++)
-            clone[i] = this[i];
+        for (var i = 0; i < this.length; i++) {
+            if (!!this[i] && typeof this[i] == 'object')
+                clone[i] = this[i].clone();
+            else
+                clone[i] = this[i];
+        }
     } else {
-        var clone = {};
-
         for (var property in this) {
+            if (!this.hasOwnProperty(property))
+                continue;
             if (!!this[property] && typeof this[property] == 'object')
                 clone[property] = this[property].clone();
             else
