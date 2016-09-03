@@ -32,8 +32,6 @@ __class('Hitbox', null, {
         this._y = y;
         this._w = w;
         this._h = h;
-
-        this._sprite = null;
     },
     //-----------------------------------------------------------------------
     // * Verifica se a hitbox colidiu com outra
@@ -54,15 +52,6 @@ __class('Hitbox', null, {
     }
 }, {
     //-----------------------------------------------------------------------
-    // * Sprite relacionado à hitbox
-    //-----------------------------------------------------------------------
-    sprite: {
-        get: function() { return this._sprite; },
-        set: function(value) {
-            this._sprite = value;
-        }
-    },
-    //-----------------------------------------------------------------------
     // * Coordenada X da hitbox
     //-----------------------------------------------------------------------
     x: {
@@ -70,8 +59,6 @@ __class('Hitbox', null, {
         set: function(value) { 
             __checkType(value, 'number', 'value');
             this._x = value;
-            if (!!this._sprite)
-                this._sprite.x = this.left;
         }
     },
     //-----------------------------------------------------------------------
@@ -82,8 +69,6 @@ __class('Hitbox', null, {
         set: function(value) { 
             __checkType(value, 'number', 'value');
             this._y = value;
-            if (!!this._sprite)
-                this._sprite.y = this.top;
         }
     },
     //-----------------------------------------------------------------------
@@ -99,8 +84,6 @@ __class('Hitbox', null, {
 
             this._w = value;
             this.x = this._x;
-            if (!!this._sprite)
-                this._sprite.redraw(this.width, this.height);
         }
     },
     //-----------------------------------------------------------------------
@@ -116,8 +99,6 @@ __class('Hitbox', null, {
 
             this._h = value;
             this.y = this._y;
-            if (!!this._sprite)
-                this._sprite.redraw(this.width, this.height);
         }
     },
     //-----------------------------------------------------------------------
@@ -176,7 +157,6 @@ __class('GameObject', null, {
             movement = Game.movement(movement);
         __checkClass(movement, Movement, 'movement');
         this._movement = movement.bind(this);
-        this._sprite = null;
     },
     //-----------------------------------------------------------------------
     // * Atualização do objeto
@@ -186,12 +166,6 @@ __class('GameObject', null, {
         this._movement.update();
         this._movement.apply();
         this._checkDispose();
-    },
-    //-----------------------------------------------------------------------
-    // * Atualiza a cor do sprite do objeto
-    //-----------------------------------------------------------------------
-    updateSpriteColor: function() {
-        this._sprite.redraw(this.hitbox.width, this.hitbox.height);
     },
     //-----------------------------------------------------------------------
     // * Verifica se o objeto deveria ser apagado
@@ -206,8 +180,6 @@ __class('GameObject', null, {
     //-----------------------------------------------------------------------
     dispose: function() {
         Game.remove(this);
-        //if (!!this._sprite)
-        //    Graphics.remove(this._sprite);
     }
 }, {
     //-----------------------------------------------------------------------
@@ -218,16 +190,6 @@ __class('GameObject', null, {
         set: function(value) {
             __checkClass(value, Hitbox, 'value');
             this._hitbox = value;
-        }
-    },
-    //-----------------------------------------------------------------------
-    // * Sprite do objeto
-    //-----------------------------------------------------------------------
-    sprite: {
-        get: function() { return this._sprite; },
-        set: function(value) {
-            this._sprite = value;
-            this._hitbox.sprite = this._sprite;
         }
     },
     //-----------------------------------------------------------------------
