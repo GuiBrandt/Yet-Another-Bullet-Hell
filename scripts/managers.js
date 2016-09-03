@@ -185,7 +185,7 @@ var Game = {
     //-----------------------------------------------------------------------
     _checkFinished: function() {
         if (this._stageID >= this._stages.length) {
-            alert('Você zerou o jogo!');
+            console.log('Você zerou o jogo!');
             this._stageID = 0;
             this.restart();
         }
@@ -194,7 +194,7 @@ var Game = {
     // * Cria o objeto do jogador
     //-----------------------------------------------------------------------
     createPlayer: function() {
-        this._player = new Player(400, 568);
+        this._player = new Player(Graphics.width / 2, Graphics.height - 32);
         this.add(this._player);
         return this._player;
     },
@@ -325,7 +325,7 @@ var Graphics = {
     // * Inicializa a parte gráfica do jogo
     //-----------------------------------------------------------------------
     initialize: function() {
-        this._renderer = new PIXI.CanvasRenderer(800, 600);
+        this._renderer = new PIXI.CanvasRenderer(640, 480);
         this._canvas = this._renderer.view;
         this._canvas.id = "GameCanvas";
         this._stage = new PIXI.Container();
@@ -355,14 +355,14 @@ var Graphics = {
         obj.sprite = rect;
 
         rect.redraw = function(w, h) {
-            rect.beginFill(rect.color);
+            rect.beginFill(obj.color);
             rect.drawRect(0, 0, w, h);
             rect.endFill();
         };
 
         obj.updateSpriteColor();
 
-        if (rect.color == null || rect.color == undefined)
+        if (obj.color == null || obj.color == undefined)
             return obj.dispose();
 
         rect.x = obj.hitbox.left;
@@ -381,10 +381,18 @@ var Graphics = {
 };
 Object.defineProperties(Graphics, {
     width: {
-        get: function() { return this._canvas.width; }
+        get: function() { return this._canvas.width; },
+        set: function(value) {
+            __checkType(value, 'number', 'value');
+            this._renderer.resize(value, this.height);
+        }
     },
     height: {
-        get: function() { return this._canvas.height; }
+        get: function() { return this._canvas.height; },
+        set: function(value) {
+            __checkType(value, 'number', 'value');
+            this._renderer.resize(this.width, value);
+        }
     },
     backgroundColor: {
         get: function() { return this._renderer.backgroundColor; },

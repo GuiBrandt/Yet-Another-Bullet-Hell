@@ -30,7 +30,7 @@ Game.createMovement('rightLeft', [new Velocity(4, 0)],
     function() {
         if (!this._timer) this._timer = 0;
         this._timer++;
-        this._timer %= 120;
+        this._timer %= 90;
         if (this._timer == 0)
             this._velocities[0].angle += Math.PI;
     }
@@ -42,7 +42,7 @@ Game.createMovement('leftRight', [new Velocity(4, Math.PI)],
     function() {
         if (!this._timer) this._timer = 0;
         this._timer++;
-        this._timer %= 120;
+        this._timer %= 90;
         if (this._timer == 0)
             this._velocities[0].angle += Math.PI;
     }
@@ -52,7 +52,7 @@ Game.createMovement('leftRight', [new Velocity(4, Math.PI)],
 //---------------------------------------------------------------------------
 Game.createMovement('circleRight', [new Velocity(4, 0)],
     function() {
-        this._velocities[0].angle += 0.05;
+        this._velocities[0].angle += 0.1;
     }
 );
 //---------------------------------------------------------------------------
@@ -60,7 +60,7 @@ Game.createMovement('circleRight', [new Velocity(4, 0)],
 //---------------------------------------------------------------------------
 Game.createMovement('circleLeft', [new Velocity(4, -Math.PI)],
     function() {
-        this._velocities[0].angle -= 0.05;
+        this._velocities[0].angle -= 0.1;
     }
 );
 //---------------------------------------------------------------------------
@@ -153,6 +153,29 @@ Game.createActionPattern('circle', {
 
     update: function() {
         var density = 48;
+
+        if (this._fireTimer % 72 == 0)
+            for (var i = 0; i <= density; i++)
+                Game.createProjectile(
+                    this._hitbox.x, this._hitbox.y,
+                    new Movement([new Velocity(2, Math.PI * 2 / density * i)]),
+                    this
+                );
+        this._fireTimer++;
+    },
+
+    death: explode
+});
+//---------------------------------------------------------------------------
+// Atira em círculos a cada 72 frames (1.2 segundos)
+//---------------------------------------------------------------------------
+Game.createActionPattern('circle1', {
+    initialize: function() {
+        this._fireTimer = 0;
+    },
+
+    update: function() {
+        var density = 24;
 
         if (this._fireTimer % 72 == 0)
             for (var i = 0; i <= density; i++)
@@ -304,12 +327,16 @@ Game.createStage({
     // Criação dos inimigos
     initialize: function() {
         Game.createEnemies(
-            [800 / 6, 32, 'static', 20, 'spiral1'],
-            [800 * 5 / 6, 32, 'static', 20, 'spiral2']
+            [Graphics.width / 6, 32, 'static', 20, 'spiral1'],
+            [Graphics.width * 5 / 6, 32, 'static', 20, 'spiral2']
         );
 
         this._i1 = setInterval(function() {
-            Game.createEnemy(799, 48, 'straightLeft', 1, 'circle');
+            Game.createEnemy(
+                Graphics.width - 1, 48, 
+                'straightLeft', 
+                1, 
+                'circle');
         }, 3000);
 
         this._i2 = setInterval(function() {
@@ -337,14 +364,14 @@ Game.createStage({
     // Criação dos inimigos
     initialize: function() {
         Game.createEnemies(
-            [Graphics.width / 3,     96, 'circleRight', 10, 'still'],
-            [Graphics.width * 2 / 3, 96, 'circleLeft',  10, 'still']
+            [Graphics.width / 3,     96, 'circleRight', 5, 'still'],
+            [Graphics.width * 2 / 3, 96, 'circleLeft',  5, 'still']
         );
 
         this._i1 = setInterval(function() {
             Game.createEnemies(
-                [100, Graphics.height - 128, 'circleUp',   5, 'circle'],
-                [Graphics.width - 100, 128,  'circleDown', 5, 'circle']
+                [100, Graphics.height - 128, 'circleUp',   1, 'circle1'],
+                [Graphics.width - 100, 128,  'circleDown', 1, 'circle1']
             );
         }, 3000);
         

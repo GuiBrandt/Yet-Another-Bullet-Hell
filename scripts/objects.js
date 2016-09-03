@@ -191,14 +191,6 @@ __class('GameObject', null, {
     // * Atualiza a cor do sprite do objeto
     //-----------------------------------------------------------------------
     updateSpriteColor: function() {
-        if (this instanceof Player)
-            this._sprite.color = Game.currentStage.playerColor;
-        else if (this instanceof Enemy)
-            this._sprite.color = Game.currentStage.enemyColor;
-        else if (this instanceof Projectile && this._shooter instanceof Player)
-            this._sprite.color = Game.currentStage.playerProjectileColor;
-        else if (this instanceof Projectile && this._shooter instanceof Enemy)
-            this._sprite.color = Game.currentStage.enemyProjectileColor;
         this._sprite.redraw(this.hitbox.width, this.hitbox.height);
     },
     //-----------------------------------------------------------------------
@@ -236,6 +228,21 @@ __class('GameObject', null, {
         set: function(value) {
             this._sprite = value;
             this._hitbox.sprite = this._sprite;
+        }
+    },
+    //-----------------------------------------------------------------------
+    // * Cor do objeto
+    //-----------------------------------------------------------------------
+    color: {
+        get: function() {
+            if (this instanceof Player)
+                return Game.currentStage.playerColor;
+            else if (this instanceof Enemy)
+                return Game.currentStage.enemyColor;
+            else if (this instanceof Projectile && this._shooter instanceof Player)
+                return Game.currentStage.playerProjectileColor;
+            else if (this instanceof Projectile && this._shooter instanceof Enemy)
+                return Game.currentStage.enemyProjectileColor;
         }
     },
     //-----------------------------------------------------------------------
