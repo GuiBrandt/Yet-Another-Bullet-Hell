@@ -97,10 +97,11 @@ window.addEventListener('blur', function() {
     Input._keysDown = [];
 });
 //=============================================================================
-// ** GameManager
+// ** Game
 //-----------------------------------------------------------------------------
 // Controla os objetos do jogo, todos os GameObjects devem ser criados por 
-// aqui, e não diretamente pelo construtor
+// aqui, e não diretamente pelo construtor. Pode tentar se quiser, mas nada vai
+// aparecer na tela...
 //=============================================================================
 var Game = {
     //-----------------------------------------------------------------------
@@ -151,6 +152,7 @@ var Game = {
     restart: function() {
         this.currentStage.terminate();
         this._objects.forEach(function (obj) { obj.dispose(); });
+        this.clear();
         Graphics.clear();
         this.start();
     },
@@ -185,7 +187,7 @@ var Game = {
     //-----------------------------------------------------------------------
     _checkFinished: function() {
         if (this._stageID >= this._stages.length) {
-            console.log('Você zerou o jogo!');
+            //console.log('Você zerou o jogo!');
             this._stageID = 0;
             this.restart();
         }
@@ -297,8 +299,8 @@ var Game = {
     //-----------------------------------------------------------------------
     remove: function(obj) {
         __checkClass(obj, GameObject, 'obj');
-        this._objects.remove(obj);
         Graphics.removeSprite(obj);
+        this._objects.remove(obj);
     },
     //-----------------------------------------------------------------------
     // * Executa uma função para cada objeto do jogo
@@ -355,6 +357,7 @@ var Graphics = {
         obj.sprite = rect;
 
         rect.redraw = function(w, h) {
+            rect.clear();
             rect.beginFill(obj.color);
             rect.drawRect(0, 0, w, h);
             rect.endFill();
@@ -375,8 +378,9 @@ var Graphics = {
     //      obj     : Objeto do qual apagar o sprite
     //-----------------------------------------------------------------------
     removeSprite: function(obj) {
-        if (!obj.sprite) return;
+        obj.sprite.visible = false;
         this._stage.removeChild(obj.sprite);
+        obj.sprite.destroy();
     }
 };
 Object.defineProperties(Graphics, {
