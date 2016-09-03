@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <title>Yet Another Bullet Hell</title>
+        <style>
+            body {
+                font-family: "Segoe UI", sans-serif;
+                font-size: 10pt;
+                background-color: #080808;
+                color: #fff;
+            }
+            
+            #GameCanvas {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                width: auto;
+                height: 100%;
+                background-color: black;
+                transform: translateX(-50%) translateY(-50%);
+            }
+        </style>
+        <script type="text/javascript" src="scripts/base.js"></script>
+        <script type="text/javascript" src="scripts/managers.js"></script>
+        <script type="text/javascript" src="scripts/objects.js"></script>
+        <script type="text/javascript" src="scripts/data.js"></script>
+        <script type="text/javascript" src="scripts/pixi.min.js"></script>
+    </head>
+    <body>
+        <script type="text/javascript" src="scripts/main.js"></script>       
+        <audio aautoplay loop style='visibility: hidden;'>
+            <source src="audio/megalovania.mp3" type="audio/mp3"></source>
+        </audio>
+    </body>
+</html>
