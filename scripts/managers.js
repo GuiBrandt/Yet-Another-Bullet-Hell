@@ -366,7 +366,7 @@ Object.defineProperties(Graphics, {
             __checkType(value, 'number', 'value');
             var c = value.toString(16),
             this._canvas.style.backgroundColor = '#' + 
-                "000000".substring(0, 6 - c.length);
+                "000000".substring(0, 6 - c.length) + c;
         }
     }
 });
