@@ -88,7 +88,7 @@ document.addEventListener('keydown', function(ev) {
 // Evento disparado quando uma tecla é levantada
 //---------------------------------------------------------------------------
 document.addEventListener('keyup', function(ev) {
-   Input._keysDown.remove(ev.keyCode); 
+   Input._keysDown.remove(ev.keyCode);
 });
 //---------------------------------------------------------------------------
 // Evento disparado quando a janela perde foco
