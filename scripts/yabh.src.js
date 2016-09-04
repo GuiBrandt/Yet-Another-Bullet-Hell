@@ -125,6 +125,7 @@ Array.prototype.remove = function(obj) {
 // Classes estáticas relacionadas ao controle de algum fator do jogo, como
 // carregamento de imagens e controle do áudio
 //=============================================================================
+"use strict";
 //=============================================================================
 // ** Input
 //-----------------------------------------------------------------------------
@@ -208,7 +209,7 @@ document.addEventListener('keydown', function(ev) {
 // Evento disparado quando uma tecla é levantada
 //---------------------------------------------------------------------------
 document.addEventListener('keyup', function(ev) {
-   Input._keysDown.remove(ev.keyCode); 
+   Input._keysDown.remove(ev.keyCode);
 });
 //---------------------------------------------------------------------------
 // Evento disparado quando a janela perde foco
@@ -238,7 +239,6 @@ var Game = {
     // * Começa o jogo
     //-----------------------------------------------------------------------
     start: function() {
-        this.clear();
         this.createPlayer();
         this.setupStage();
     },
@@ -246,9 +246,11 @@ var Game = {
     // * Atualiza o jogo
     //-----------------------------------------------------------------------
     update: function() {
-        if (!this._objects.some(function(o) {
-            return o instanceof Enemy; 
-        })) {
+        var i = 0, e = false;
+        while (i < this._objects.length && !e)
+            e = this._objects[i++] instanceof Enemy;
+
+        if (!e) {
             this.currentStage.terminate();
             this.nextStage();
             this.setupStage();
@@ -269,7 +271,6 @@ var Game = {
     //-----------------------------------------------------------------------
     restart: function() {
         this.currentStage.terminate();
-        this.forEachObject(function (obj) { obj.dispose(); });
         this.clear();
         this.start();
     },
@@ -284,7 +285,8 @@ var Game = {
     //-----------------------------------------------------------------------
     setupStage: function() {
         if (!!this.currentStage) {
-            Graphics.backgroundColor = this.currentStage.backgroundColor
+            Graphics.backgroundColor = this.currentStage.backgroundColor;
+            AudioManager.playBgm.apply(AudioManager, this.currentStage.bgm);
             this.currentStage.initialize();
         } else
             this.nextStage();
@@ -366,10 +368,12 @@ var Game = {
     // * Cria vários inimigos de uma vez
     //-----------------------------------------------------------------------
     createEnemies: function() {
+        var es = [];
         for (var i = 0; i < arguments.length; i++) {
             __checkClass(arguments[i], Array, 'arguments[' + i + ']');
-            this.createEnemy.apply(this, arguments[i]);
+            es.push(this.createEnemy.apply(this, arguments[i]));
         }
+        return es;
     },
     //-----------------------------------------------------------------------
     // * Cria um projétil
@@ -381,6 +385,10 @@ var Game = {
     createProjectile: function(x, y, movement, shooter) {
         var p = new Projectile(x, y, movement, shooter);
         this.add(p);
+
+        if (shooter instanceof Player)
+            AudioManager.playSe('audio/playerShot.m4a', 0.1, 2);
+
         return p;
     },
     //-----------------------------------------------------------------------
@@ -497,28 +505,77 @@ Object.defineProperties(Graphics, {
 //=============================================================================
 var AudioManager = {
     //-----------------------------------------------------------------------
-    // * Propriedades privadas
-    //-----------------------------------------------------------------------
-    _bgmList: [
-        "audio/badapple.mp3",
-        "audio/tetris.mp3",
-        "audio/megalovania.mp3",
-    ],
-    //-----------------------------------------------------------------------
     // * Inicializa o áudio
     //-----------------------------------------------------------------------
     initialize: function() {
-        this._bgm = new Audio(this._bgmList[0]);
-        this._bgmNumber = 0;
-        this._bgm.addEventListener('ended', function() {
-            this._bgmNumber++;
-            this._bgmNumber %= this._bgmList.length;
-            this._bgm.src = this._bgmList[this._bgmNumber];
-            this._bgm.pause();
-            this._bgm.load();
+        this._bgm = new Audio();
+        this._mute = false;
+        this._currentBgm = "";
+    },
+    //-----------------------------------------------------------------------
+    // * Toca uma BGM
+    //      filename    : Nome do arquivo da BGM
+    //      volume      : Volume da BGM
+    //      pitch       : Tom da bgm (maior = mais agudo)
+    //-----------------------------------------------------------------------
+    playBgm: function(filename, volume, pitch) {
+        if (this._mute)
+            return;
+
+        __checkType(filename, 'string', 'filename');
+
+        if (!!volume) {
+            __checkType(volume, 'number', 'volume');
+            this._bgm.volume = volume;
+        }
+
+        if (!!pitch) {
+            __checkType(pitch, 'number', 'pitch');
+            this._bgm.playbackRate = pitch;
+        }
+
+        if (this._currentBgm == filename) 
+            return;
+
+        this._bgm.pause();
+        this._currentBgm = filename;
+        this._bgm.src = filename;
+        this._bgm.addEventListener('canplay', function() {
             this._bgm.play();
+            this._bgm.addEventListener('ended', function() {
+                this._bgm.play();
+            }.bind(this));
         }.bind(this));
-        this._bgm.play();
+    },
+    //-----------------------------------------------------------------------
+    // * Pausa a BGM
+    //-----------------------------------------------------------------------
+    stopBgm: function() {
+        this._bgm.pause();
+    },
+    //-----------------------------------------------------------------------
+    // * Toca um SE
+    //      filename    : Nome do arquivo de SE
+    //      volume      : Volume do Se
+    //      pitch       : Tom da bgm (maior = mais agudo)
+    //-----------------------------------------------------------------------
+    playSe: function(filename, volume, pitch) {
+        if (this._mute)
+            return;
+
+        __checkType(filename, 'string', 'filename');
+        var se = new Audio(filename);
+        if (!!volume) {
+            __checkType(volume, 'number', 'volume');
+            se.volume = volume;
+        }
+
+        if (!!pitch) {
+            __checkType(pitch, 'number', 'pitch');
+            se.playbackRate = pitch;
+        }
+        se.play();
+        return se;
     }
 };
 //=============================================================================
@@ -526,6 +583,7 @@ var AudioManager = {
 //
 // Classes dos objetos do jogo, usadas para controle interno
 //=============================================================================
+"use strict";
 //=============================================================================
 // ** Hitbox
 //-----------------------------------------------------------------------------
@@ -679,6 +737,7 @@ __class('GameObject', null, {
             movement = Game.movement(movement);
         __checkClass(movement, Movement, 'movement');
         this._movement = movement.bind(this);
+        this._color = null;
     },
     //-----------------------------------------------------------------------
     // * Atualização do objeto
@@ -719,7 +778,9 @@ __class('GameObject', null, {
     //-----------------------------------------------------------------------
     color: {
         get: function() {
-            if (this instanceof Player)
+            if (!!this._color)
+                return this._color;
+            else if (this instanceof Player)
                 return Game.currentStage.playerColor;
             else if (this instanceof Enemy)
                 return Game.currentStage.enemyColor;
@@ -727,6 +788,10 @@ __class('GameObject', null, {
                 return Game.currentStage.playerProjectileColor;
             else if (this instanceof Projectile && this._shooter instanceof Enemy)
                 return Game.currentStage.enemyProjectileColor;
+        },
+        set: function(value) {
+            __checkType(value, 'number', 'value');
+            this._color = value;
         }
     },
     //-----------------------------------------------------------------------
@@ -977,6 +1042,7 @@ __class('Enemy', 'GameObject', {
         actions = Game.actionPattern(actions);
         __checkClass(actions, GameActions, 'actions');
         
+        this._maxHealth = health;
         this._health = health;
         this._actions = actions.bind(this);
         
@@ -1009,6 +1075,12 @@ __class('Enemy', 'GameObject', {
     //-----------------------------------------------------------------------
     health: {
         get: function() { return this._health; }
+    },
+    //-----------------------------------------------------------------------
+    // * Vida máxima do inimigo
+    //-----------------------------------------------------------------------
+    maxHealth: {
+        get: function() { return this._maxHealth; }
     }
 });
 //=============================================================================
@@ -1096,6 +1168,7 @@ __class('Player', 'GameObject', {
 //
 // Declaração das variáveis de dados usadas pelo resto das classes
 //=============================================================================
+"use strict";
 //=============================================================================
 // Movimentos
 //=============================================================================
@@ -1226,6 +1299,7 @@ function explode() {
             new Movement([new Velocity(4, Math.PI * 2 / 54 * i)]),
             this
         );
+    AudioManager.playSe("audio/enemyDeath.m4a", 0.2, 0.5);
 }
 //---------------------------------------------------------------------------
 // Não faz nada
@@ -1246,13 +1320,15 @@ Game.createActionPattern('circle', {
     update: function() {
         var density = 48;
 
-        if (this._fireTimer % 72 == 0)
+        if (this._fireTimer % 72 == 0) {
             for (var i = 0; i <= density; i++)
                 Game.createProjectile(
                     this._hitbox.x, this._hitbox.y,
                     new Movement([new Velocity(2, Math.PI * 2 / density * i)]),
                     this
                 );
+            AudioManager.playSe("audio/enemyShot01.m4a", 0.05, 0.5);
+        }
         this._fireTimer++;
     },
 
@@ -1269,13 +1345,15 @@ Game.createActionPattern('circle1', {
     update: function() {
         var density = 24;
 
-        if (this._fireTimer % 72 == 0)
+        if (this._fireTimer % 72 == 0) {
             for (var i = 0; i <= density; i++)
                 Game.createProjectile(
                     this._hitbox.x, this._hitbox.y,
                     new Movement([new Velocity(2, Math.PI * 2 / density * i)]),
                     this
                 );
+            AudioManager.playSe("audio/enemyShot01.m4a", 0.05, 0.5);
+        }
         this._fireTimer++;
     },
 
@@ -1379,12 +1457,57 @@ Game.createActionPattern('arc2', {
 
     death: explode
 });
-//=============================================================================
-// Estágios
-//=============================================================================
 //---------------------------------------------------------------------------
-// Primeiro
+// Padrão de ação dos dois primeiros bosses
 //---------------------------------------------------------------------------
+Game.createActionPattern('boss1-1', {
+    initialize: function() {
+        this._fireTimer = 0;
+    },
+
+    update: function() {
+        var dmg = this._maxHealth - this._health,
+            pct = dmg / this._maxHealth;
+        if (this._fireTimer % Math.floor(5 - pct * 4) == 0)
+            Game.createProjectile(
+                this._hitbox.x, this._hitbox.y,
+                new Movement([
+                    new Velocity(2, -Math.PI * 2 / 240 * this._fireTimer)
+                ]),
+                this
+            );
+        var dmg = this._maxHealth - this._health;
+        var r = 0xff, n = Math.floor(0xFF - pct * 0xFF) & 0xFF;
+        this._color = (r << 16) + (n << 8) + n;
+        this._fireTimer++;
+    },
+
+    death: explode
+});
+Game.createActionPattern('boss1-2', {
+    initialize: function() {
+        this._fireTimer = 0;
+    },
+
+    update: function() {
+        var dmg = this._maxHealth - this._health,
+            pct = dmg / this._maxHealth;
+        if (this._fireTimer % Math.floor(5 - pct * 4) == 0)
+            Game.createProjectile(
+                this._hitbox.x, this._hitbox.y,
+                new Movement([new Velocity(2, -Math.PI * 2 / 240 * this._fireTimer)]),
+                this
+            );
+        var r = 0xFF, n = Math.floor(0xFF - pct * 0xFF) & 0xFF;
+        this._color = (r << 16) + (n << 8) + n;
+        this._fireTimer++;
+    },
+
+    death: explode
+});
+//=============================================================================
+// Primeira fase
+//=============================================================================
 Game.createStage({
     // Cores legais
     backgroundColor:        0x000000,
@@ -1392,6 +1515,9 @@ Game.createStage({
     enemyColor:             0xFF0000,
     playerProjectileColor:  0x00FFFF,
     enemyProjectileColor:   0xFFFF00,
+
+    // Música
+    bgm: ["audio/badapple.mp3"],
     
     // Criação dos inimigos
     initialize: function() {
@@ -1405,22 +1531,23 @@ Game.createStage({
     // Finalização do estágio
     terminate: function() {}
 });
-//---------------------------------------------------------------------------
-// Segundo
-//---------------------------------------------------------------------------
+
 Game.createStage({
     // Cores legais
-    backgroundColor:        0xffffff,
-    playerColor:            0x00aaff,
-    enemyColor:             0x000000,
-    playerProjectileColor:  0x00ff00,
-    enemyProjectileColor:   0xff0000,
+    backgroundColor:        0x000000,
+    playerColor:            0x00FF00,
+    enemyColor:             0xFF0000,
+    playerProjectileColor:  0x00FFFF,
+    enemyProjectileColor:   0xFFFF00,
+
+    // Música
+    bgm: ["audio/badapple.mp3"],
 
     // Criação dos inimigos
     initialize: function() {
         Game.createEnemies(
-            [Graphics.width / 6, 32, 'static', 20, 'spiral1'],
-            [Graphics.width * 5 / 6, 32, 'static', 20, 'spiral2']
+            [Graphics.width / 6, 32, 'static', 15, 'spiral1'],
+            [Graphics.width * 5 / 6, 32, 'static', 15, 'spiral2']
         );
 
         this._i1 = setInterval(function() {
@@ -1442,23 +1569,40 @@ Game.createStage({
         clearInterval(this._i2);
     }
 });
-//---------------------------------------------------------------------------
-// Terceiro
-//---------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Boss
+//-----------------------------------------------------------------------------
 Game.createStage({
     // Cores legais
+    backgroundColor:        0x000000,
+    playerColor:            0x00FF00,
+    enemyColor:             0xFF0000,
+    playerProjectileColor:  0x00FFFF,
+    enemyProjectileColor:   0xFFFF00,
+    /*
     backgroundColor:        0x190096,
     playerColor:            0xFFFFFF,
     enemyColor:             0xFF00FF,
     playerProjectileColor:  0x00FFFF,
     enemyProjectileColor:   0xB700FF,
+    */
     
+    // Música
+    bgm: ["audio/badapple.mp3"],
+
     // Criação dos inimigos
     initialize: function() {
-        Game.createEnemies(
-            [Graphics.width / 3,     96, 'circleRight', 5, 'still'],
-            [Graphics.width * 2 / 3, 96, 'circleLeft',  5, 'still']
+        var enemies = Game.createEnemies(
+            [Graphics.width / 3,     96, 'circleLeft',  10, 'boss1-1'],
+            [Graphics.width * 2 / 3, 96, 'circleRight', 10, 'boss1-2']
         );
+
+        for (var i = 0; i < enemies.length; i++) {
+            enemies[i].hitbox.width = enemies[i].hitbox.height = 16;
+            enemies[i].color = 0xFFFFFF;
+        }
+
+        enemies = null;
 
         this._i1 = setInterval(function() {
             Game.createEnemies(
@@ -1475,16 +1619,53 @@ Game.createStage({
     }
 });
 //=============================================================================
+// Segunda fase
+//=============================================================================
+Game.createStage({
+    // Cores legais
+    backgroundColor:        0xffffff,
+    playerColor:            0x00aaff,
+    enemyColor:             0x000000,
+    playerProjectileColor:  0x00ff00,
+    enemyProjectileColor:   0xff0000,
+
+    // Música
+    bgm: ["audio/tetris.mp3"],
+
+    // Criação dos inimigos
+    initialize: function() {
+        Game.createEnemies(
+            [Graphics.width / 3, 96,     'static', 5, 'circle'],
+            [Graphics.width * 2 / 3, 96, 'static', 5, 'circle'],
+            [Graphics.width / 2, 192, 'static', 5, 'circle']
+        );
+
+        this._i1 = setInterval(function() {
+            Game.createEnemy(0, 32, 'circleRight', 10, 'arc1');
+        }, 2000);
+
+        this._i2 = setInterval(function() {
+            Game.createEnemy(Graphics.width - 1, 32, 'circleLeft', 10, 'arc2');
+        }, 3000);
+    },
+
+    // Finalização do estágio
+    terminate: function() {
+        clearInterval(this._i1);
+        clearInterval(this._i2);
+    }
+});
+//=============================================================================
 // main.js
 //
 // Processo principal
 //=============================================================================
+"use strict";
 
 // Inicialização
 Graphics.initialize();
 AudioManager.initialize();
 Game.start();
-AudioManager.initialize();
 
 // Loop principal
 function mainLoop() {
