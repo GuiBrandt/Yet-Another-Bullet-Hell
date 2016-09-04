@@ -9,7 +9,6 @@
 Graphics.initialize();
 AudioManager.initialize();
 Game.start();
-AudioManager.initialize();
 
 // Loop principal
 function mainLoop() {

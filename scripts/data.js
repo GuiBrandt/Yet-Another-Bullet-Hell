@@ -134,6 +134,7 @@ function explode() {
             new Movement([new Velocity(4, Math.PI * 2 / 54 * i)]),
             this
         );
+    AudioManager.playSe("audio/enemyDeath.m4a", 0.2, 0.5);
 }
 //---------------------------------------------------------------------------
 // Não faz nada
@@ -154,13 +155,15 @@ Game.createActionPattern('circle', {
     update: function() {
         var density = 48;
 
-        if (this._fireTimer % 72 == 0)
+        if (this._fireTimer % 72 == 0) {
             for (var i = 0; i <= density; i++)
                 Game.createProjectile(
                     this._hitbox.x, this._hitbox.y,
                     new Movement([new Velocity(2, Math.PI * 2 / density * i)]),
                     this
                 );
+            AudioManager.playSe("audio/enemyShot01.m4a", 0.05, 0.5);
+        }
         this._fireTimer++;
     },
 
@@ -177,13 +180,15 @@ Game.createActionPattern('circle1', {
     update: function() {
         var density = 24;
 
-        if (this._fireTimer % 72 == 0)
+        if (this._fireTimer % 72 == 0) {
             for (var i = 0; i <= density; i++)
                 Game.createProjectile(
                     this._hitbox.x, this._hitbox.y,
                     new Movement([new Velocity(2, Math.PI * 2 / density * i)]),
                     this
                 );
+            AudioManager.playSe("audio/enemyShot01.m4a", 0.05, 0.5);
+        }
         this._fireTimer++;
     },
 
@@ -287,12 +292,57 @@ Game.createActionPattern('arc2', {
 
     death: explode
 });
-//=============================================================================
-// Estágios
-//=============================================================================
 //---------------------------------------------------------------------------
-// Primeiro
+// Padrão de ação dos dois primeiros bosses
 //---------------------------------------------------------------------------
+Game.createActionPattern('boss1-1', {
+    initialize: function() {
+        this._fireTimer = 0;
+    },
+
+    update: function() {
+        var dmg = this._maxHealth - this._health,
+            pct = dmg / this._maxHealth;
+        if (this._fireTimer % Math.floor(5 - pct * 4) == 0)
+            Game.createProjectile(
+                this._hitbox.x, this._hitbox.y,
+                new Movement([
+                    new Velocity(2, -Math.PI * 2 / 240 * this._fireTimer)
+                ]),
+                this
+            );
+        var dmg = this._maxHealth - this._health;
+        var r = 0xff, n = Math.floor(0xFF - pct * 0xFF) & 0xFF;
+        this._color = (r << 16) + (n << 8) + n;
+        this._fireTimer++;
+    },
+
+    death: explode
+});
+Game.createActionPattern('boss1-2', {
+    initialize: function() {
+        this._fireTimer = 0;
+    },
+
+    update: function() {
+        var dmg = this._maxHealth - this._health,
+            pct = dmg / this._maxHealth;
+        if (this._fireTimer % Math.floor(5 - pct * 4) == 0)
+            Game.createProjectile(
+                this._hitbox.x, this._hitbox.y,
+                new Movement([new Velocity(2, -Math.PI * 2 / 240 * this._fireTimer)]),
+                this
+            );
+        var r = 0xFF, n = Math.floor(0xFF - pct * 0xFF) & 0xFF;
+        this._color = (r << 16) + (n << 8) + n;
+        this._fireTimer++;
+    },
+
+    death: explode
+});
+//=============================================================================
+// Primeira fase
+//=============================================================================
 Game.createStage({
     // Cores legais
     backgroundColor:        0x000000,
@@ -300,6 +350,9 @@ Game.createStage({
     enemyColor:             0xFF0000,
     playerProjectileColor:  0x00FFFF,
     enemyProjectileColor:   0xFFFF00,
+
+    // Música
+    bgm: ["audio/badapple.mp3"],
     
     // Criação dos inimigos
     initialize: function() {
@@ -313,22 +366,23 @@ Game.createStage({
     // Finalização do estágio
     terminate: function() {}
 });
-//---------------------------------------------------------------------------
-// Segundo
-//---------------------------------------------------------------------------
+
 Game.createStage({
     // Cores legais
-    backgroundColor:        0xffffff,
-    playerColor:            0x00aaff,
-    enemyColor:             0x000000,
-    playerProjectileColor:  0x00ff00,
-    enemyProjectileColor:   0xff0000,
+    backgroundColor:        0x000000,
+    playerColor:            0x00FF00,
+    enemyColor:             0xFF0000,
+    playerProjectileColor:  0x00FFFF,
+    enemyProjectileColor:   0xFFFF00,
+
+    // Música
+    bgm: ["audio/badapple.mp3"],
 
     // Criação dos inimigos
     initialize: function() {
         Game.createEnemies(
-            [Graphics.width / 6, 32, 'static', 20, 'spiral1'],
-            [Graphics.width * 5 / 6, 32, 'static', 20, 'spiral2']
+            [Graphics.width / 6, 32, 'static', 15, 'spiral1'],
+            [Graphics.width * 5 / 6, 32, 'static', 15, 'spiral2']
         );
 
         this._i1 = setInterval(function() {
@@ -350,23 +404,40 @@ Game.createStage({
         clearInterval(this._i2);
     }
 });
-//---------------------------------------------------------------------------
-// Terceiro
-//---------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Boss
+//-----------------------------------------------------------------------------
 Game.createStage({
     // Cores legais
+    backgroundColor:        0x000000,
+    playerColor:            0x00FF00,
+    enemyColor:             0xFF0000,
+    playerProjectileColor:  0x00FFFF,
+    enemyProjectileColor:   0xFFFF00,
+    /*
     backgroundColor:        0x190096,
     playerColor:            0xFFFFFF,
     enemyColor:             0xFF00FF,
     playerProjectileColor:  0x00FFFF,
     enemyProjectileColor:   0xB700FF,
+    */
     
+    // Música
+    bgm: ["audio/badapple.mp3"],
+
     // Criação dos inimigos
     initialize: function() {
-        Game.createEnemies(
-            [Graphics.width / 3,     96, 'circleRight', 5, 'still'],
-            [Graphics.width * 2 / 3, 96, 'circleLeft',  5, 'still']
+        var enemies = Game.createEnemies(
+            [Graphics.width / 3,     96, 'circleLeft',  10, 'boss1-1'],
+            [Graphics.width * 2 / 3, 96, 'circleRight', 10, 'boss1-2']
         );
+
+        for (var i = 0; i < enemies.length; i++) {
+            enemies[i].hitbox.width = enemies[i].hitbox.height = 16;
+            enemies[i].color = 0xFFFFFF;
+        }
+
+        enemies = null;
 
         this._i1 = setInterval(function() {
             Game.createEnemies(
@@ -380,5 +451,42 @@ Game.createStage({
     // Finalização do estágio
     terminate: function() {
         clearInterval(this._i1);
+    }
+});
+//=============================================================================
+// Segunda fase
+//=============================================================================
+Game.createStage({
+    // Cores legais
+    backgroundColor:        0xffffff,
+    playerColor:            0x00aaff,
+    enemyColor:             0x000000,
+    playerProjectileColor:  0x00ff00,
+    enemyProjectileColor:   0xff0000,
+
+    // Música
+    bgm: ["audio/tetris.mp3"],
+
+    // Criação dos inimigos
+    initialize: function() {
+        Game.createEnemies(
+            [Graphics.width / 3, 96,     'static', 5, 'circle'],
+            [Graphics.width * 2 / 3, 96, 'static', 5, 'circle'],
+            [Graphics.width / 2, 192, 'static', 5, 'circle']
+        );
+
+        this._i1 = setInterval(function() {
+            Game.createEnemy(0, 32, 'circleRight', 10, 'arc1');
+        }, 2000);
+
+        this._i2 = setInterval(function() {
+            Game.createEnemy(Graphics.width - 1, 32, 'circleLeft', 10, 'arc2');
+        }, 3000);
+    },
+
+    // Finalização do estágio
+    terminate: function() {
+        clearInterval(this._i1);
+        clearInterval(this._i2);
     }
 });

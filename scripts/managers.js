@@ -118,7 +118,6 @@ var Game = {
     // * Começa o jogo
     //-----------------------------------------------------------------------
     start: function() {
-        this.clear();
         this.createPlayer();
         this.setupStage();
     },
@@ -126,9 +125,11 @@ var Game = {
     // * Atualiza o jogo
     //-----------------------------------------------------------------------
     update: function() {
-        if (!this._objects.some(function(o) {
-            return o instanceof Enemy; 
-        })) {
+        var i = 0, e = false;
+        while (i < this._objects.length && !e)
+            e = this._objects[i++] instanceof Enemy;
+
+        if (!e) {
             this.currentStage.terminate();
             this.nextStage();
             this.setupStage();
@@ -149,7 +150,6 @@ var Game = {
     //-----------------------------------------------------------------------
     restart: function() {
         this.currentStage.terminate();
-        this.forEachObject(function (obj) { obj.dispose(); });
         this.clear();
         this.start();
     },
@@ -164,7 +164,8 @@ var Game = {
     //-----------------------------------------------------------------------
     setupStage: function() {
         if (!!this.currentStage) {
-            Graphics.backgroundColor = this.currentStage.backgroundColor
+            Graphics.backgroundColor = this.currentStage.backgroundColor;
+            AudioManager.playBgm.apply(AudioManager, this.currentStage.bgm);
             this.currentStage.initialize();
         } else
             this.nextStage();
@@ -246,10 +247,12 @@ var Game = {
     // * Cria vários inimigos de uma vez
     //-----------------------------------------------------------------------
     createEnemies: function() {
+        var es = [];
         for (var i = 0; i < arguments.length; i++) {
             __checkClass(arguments[i], Array, 'arguments[' + i + ']');
-            this.createEnemy.apply(this, arguments[i]);
+            es.push(this.createEnemy.apply(this, arguments[i]));
         }
+        return es;
     },
     //-----------------------------------------------------------------------
     // * Cria um projétil
@@ -261,6 +264,10 @@ var Game = {
     createProjectile: function(x, y, movement, shooter) {
         var p = new Projectile(x, y, movement, shooter);
         this.add(p);
+
+        if (shooter instanceof Player)
+            AudioManager.playSe('audio/playerShot.m4a', 0.1, 2);
+
         return p;
     },
     //-----------------------------------------------------------------------
@@ -377,27 +384,76 @@ Object.defineProperties(Graphics, {
 //=============================================================================
 var AudioManager = {
     //-----------------------------------------------------------------------
-    // * Propriedades privadas
-    //-----------------------------------------------------------------------
-    _bgmList: [
-        "audio/badapple.mp3",
-        "audio/tetris.mp3",
-        "audio/megalovania.mp3",
-    ],
-    //-----------------------------------------------------------------------
     // * Inicializa o áudio
     //-----------------------------------------------------------------------
     initialize: function() {
-        this._bgm = new Audio(this._bgmList[0]);
-        this._bgmNumber = 0;
-        this._bgm.addEventListener('ended', function() {
-            this._bgmNumber++;
-            this._bgmNumber %= this._bgmList.length;
-            this._bgm.src = this._bgmList[this._bgmNumber];
-            this._bgm.pause();
-            this._bgm.load();
+        this._bgm = new Audio();
+        this._mute = false;
+        this._currentBgm = "";
+    },
+    //-----------------------------------------------------------------------
+    // * Toca uma BGM
+    //      filename    : Nome do arquivo da BGM
+    //      volume      : Volume da BGM
+    //      pitch       : Tom da bgm (maior = mais agudo)
+    //-----------------------------------------------------------------------
+    playBgm: function(filename, volume, pitch) {
+        if (this._mute)
+            return;
+
+        __checkType(filename, 'string', 'filename');
+
+        if (!!volume) {
+            __checkType(volume, 'number', 'volume');
+            this._bgm.volume = volume;
+        }
+
+        if (!!pitch) {
+            __checkType(pitch, 'number', 'pitch');
+            this._bgm.playbackRate = pitch;
+        }
+
+        if (this._currentBgm == filename) 
+            return;
+
+        this._bgm.pause();
+        this._currentBgm = filename;
+        this._bgm.src = filename;
+        this._bgm.addEventListener('canplay', function() {
             this._bgm.play();
+            this._bgm.addEventListener('ended', function() {
+                this._bgm.play();
+            }.bind(this));
         }.bind(this));
-        this._bgm.play();
+    },
+    //-----------------------------------------------------------------------
+    // * Pausa a BGM
+    //-----------------------------------------------------------------------
+    stopBgm: function() {
+        this._bgm.pause();
+    },
+    //-----------------------------------------------------------------------
+    // * Toca um SE
+    //      filename    : Nome do arquivo de SE
+    //      volume      : Volume do Se
+    //      pitch       : Tom da bgm (maior = mais agudo)
+    //-----------------------------------------------------------------------
+    playSe: function(filename, volume, pitch) {
+        if (this._mute)
+            return;
+
+        __checkType(filename, 'string', 'filename');
+        var se = new Audio(filename);
+        if (!!volume) {
+            __checkType(volume, 'number', 'volume');
+            se.volume = volume;
+        }
+
+        if (!!pitch) {
+            __checkType(pitch, 'number', 'pitch');
+            se.playbackRate = pitch;
+        }
+        se.play();
+        return se;
     }
 };

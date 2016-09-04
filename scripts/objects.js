@@ -157,6 +157,7 @@ __class('GameObject', null, {
             movement = Game.movement(movement);
         __checkClass(movement, Movement, 'movement');
         this._movement = movement.bind(this);
+        this._color = null;
     },
     //-----------------------------------------------------------------------
     // * Atualização do objeto
@@ -197,7 +198,9 @@ __class('GameObject', null, {
     //-----------------------------------------------------------------------
     color: {
         get: function() {
-            if (this instanceof Player)
+            if (!!this._color)
+                return this._color;
+            else if (this instanceof Player)
                 return Game.currentStage.playerColor;
             else if (this instanceof Enemy)
                 return Game.currentStage.enemyColor;
@@ -205,6 +208,10 @@ __class('GameObject', null, {
                 return Game.currentStage.playerProjectileColor;
             else if (this instanceof Projectile && this._shooter instanceof Enemy)
                 return Game.currentStage.enemyProjectileColor;
+        },
+        set: function(value) {
+            __checkType(value, 'number', 'value');
+            this._color = value;
         }
     },
     //-----------------------------------------------------------------------
@@ -455,6 +462,7 @@ __class('Enemy', 'GameObject', {
         actions = Game.actionPattern(actions);
         __checkClass(actions, GameActions, 'actions');
         
+        this._maxHealth = health;
         this._health = health;
         this._actions = actions.bind(this);
         
@@ -487,6 +495,12 @@ __class('Enemy', 'GameObject', {
     //-----------------------------------------------------------------------
     health: {
         get: function() { return this._health; }
+    },
+    //-----------------------------------------------------------------------
+    // * Vida máxima do inimigo
+    //-----------------------------------------------------------------------
+    maxHealth: {
+        get: function() { return this._maxHealth; }
     }
 });
 //=============================================================================
