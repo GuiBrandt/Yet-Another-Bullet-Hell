@@ -405,7 +405,7 @@ __class('Projectile', 'GameObject', {
         this._shooter = shooter;
         
         this.__super__.initialize.call(this, x, y, movement);
-        this._hitbox.width = this._hitbox.height = 4;
+        this._hitbox.width = this._hitbox.height = 5;
     },
     //-----------------------------------------------------------------------
     // * Atualização do objeto

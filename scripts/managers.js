@@ -157,6 +157,9 @@ var Game = {
     // * Limpa os objetos do jogo
     //-----------------------------------------------------------------------
     clear: function() {
+        this.forEachObject(function (obj) {
+            obj.dispose();
+        });
         this._objects = [];
     },
     //-----------------------------------------------------------------------
@@ -313,6 +316,12 @@ Object.defineProperties(Game, {
     currentStage: {
         get: function() {
             return this._stages[this._stageID];
+        }
+    },
+
+    player: {
+        get: function() {
+            return this._player;
         }
     }
 });
