@@ -380,7 +380,7 @@ var Graphics = {
     _initShaders: function() {
         var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
         gl.shaderSource(fragmentShader,
-            "precision highp float;" +
+            "precision lowp float;" +
             "uniform vec3 color;" +
             "void main(void) {" + 
                 "gl_FragColor = vec4(color, 1.0);" +
@@ -394,7 +394,7 @@ var Graphics = {
 
         var vertexShader = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vertexShader, 
-            "precision highp float;" +
+            "precision lowp float;" +
             "attribute vec3 aVertexPosition;" +
             "uniform float screenWidth;" +
             "uniform float screenHeight;" +
