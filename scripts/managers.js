@@ -378,54 +378,52 @@ var Graphics = {
         window.gl.viewport(0, 0, this._canvas.width, this._canvas.height);
     },
     //-----------------------------------------------------------------------
+    // * Carrega um shader pelo DOM
+    //-----------------------------------------------------------------------
+    _loadShader: function(name) {
+        var el = document.getElementById(name);
+        if (!!el)
+            return el.innerText;
+        else
+            throw new Error('Falha ao carregar shader `' + name + "'");
+    },
+    //-----------------------------------------------------------------------
     // * Inicializa os shaders usados com o WebGL
     //-----------------------------------------------------------------------
     _initShaders: function() {
-        var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-        gl.shaderSource(fragmentShader,
-            "precision lowp float;" +
-            "uniform vec3 color;" +
-            "void main(void) {" + 
-                "gl_FragColor = vec4(color, 1.0);" +
-            "}");
-        gl.compileShader(fragmentShader);
 
-        if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {  
-            console.error("An error occurred compiling the shaders: " + gl.getShaderInfoLog(fragmentShader));  
-            return null;
+        function compile(shader) {
+            gl.compileShader(shader);
+
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) 
+                throw new Error(
+                    "Erro de compilação no shader: " + 
+                        gl.getShaderInfoLog(shader)
+                );
         }
+
+        var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fragmentShader, this._loadShader('color-fragshader'));
+        compile(fragmentShader);
 
         var vertexShader = gl.createShader(gl.VERTEX_SHADER);
-        gl.shaderSource(vertexShader, 
-            "precision lowp float;" +
-            "attribute vec3 aVertexPosition;" +
-            "uniform float screenWidth;" +
-            "uniform float screenHeight;" +
-            "uniform vec2 scale;" +
-            "uniform vec2 translate;" +
-            "void main(void) {" +
-                "gl_Position = vec4(" + 
-                    "(aVertexPosition.x * scale.x + translate.x * 2.0) / screenWidth," + 
-                    "-(aVertexPosition.y * scale.y + translate.y * 2.0) / screenHeight" + 
-                    ", 0.0, 1.0" +
-                ");" +
-            "}");
-        gl.compileShader(vertexShader);
-        if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {  
-            console.error("An error occurred compiling the shaders: " + gl.getShaderInfoLog(vertexShader));  
-            return null;
-        }
+        gl.shaderSource(vertexShader, this._loadShader('pixel-vxshader'));
+        compile(vertexShader);
 
         this._shaderProgram = gl.createProgram();
         gl.attachShader(this._shaderProgram, vertexShader);
         gl.attachShader(this._shaderProgram, fragmentShader);
         gl.linkProgram(this._shaderProgram);
-        if (!gl.getProgramParameter(this._shaderProgram, gl.LINK_STATUS)) {
-            alert("Não foi possível inicializar o programa de shaders");
-        }
+
+        if (!gl.getProgramParameter(this._shaderProgram, gl.LINK_STATUS))
+            throw new Error("Não foi possível inicializar os shaders");
+        
         gl.useProgram(this._shaderProgram);
 
-        this._vertPosAttr = gl.getAttribLocation(this._shaderProgram, "aVertexPosition");
+        this._vertPosAttr = gl.getAttribLocation(
+            this._shaderProgram, 
+            "vertexPosition"
+        );
         gl.enableVertexAttribArray(this._vertPosAttr);
     },
     //-----------------------------------------------------------------------
@@ -436,9 +434,9 @@ var Graphics = {
         gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
 
         var vertices = [
-            1.0,  1.0,  0.0,
-            -1.0, 1.0,  0.0,
-            1.0,  -1.0, 0.0,
+             1.0,  1.0, 0.0,
+            -1.0,  1.0, 0.0,
+             1.0, -1.0, 0.0,
             -1.0, -1.0, 0.0
         ];
 
@@ -471,17 +469,15 @@ var Graphics = {
         gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
         gl.vertexAttribPointer(this._vertPosAttr, 3, gl.FLOAT, false, 0, 0);
 
-        var screenWidthUniform = gl.getUniformLocation(this._shaderProgram, 'screenWidth');
-        var screenHeightUniform = gl.getUniformLocation(this._shaderProgram, 'screenHeight');
-        var scaleUniform = gl.getUniformLocation(this._shaderProgram, 'scale');
+        var screenSizeUniform = gl.getUniformLocation(this._shaderProgram, 'screenSize');
+        var sizeUniform = gl.getUniformLocation(this._shaderProgram, 'size');
         var translateUniform = gl.getUniformLocation(this._shaderProgram, 'translate');
         var colorUniform = gl.getUniformLocation(this._shaderProgram, 'color');
         
-        gl.uniform1f(screenWidthUniform, this.width);
-        gl.uniform1f(screenHeightUniform, this.height);
+        gl.uniform2f(screenSizeUniform, this.width, this.height);
 
         Game.forEachObject(function(obj) {
-            gl.uniform2f(scaleUniform, obj._hitbox.width, obj._hitbox.height);
+            gl.uniform2f(sizeUniform, obj._hitbox.width, obj._hitbox.height);
             gl.uniform2f(translateUniform,
                 obj._hitbox.x - this.width / 2, 
                 obj._hitbox.y - this.height / 2

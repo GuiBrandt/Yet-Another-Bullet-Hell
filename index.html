@@ -27,6 +27,56 @@
         <script type="text/javascript" src="data/movements.js"></script>
         <script type="text/javascript" src="data/enemies.js"></script>
         <script type="text/javascript" src="data/stages.js"></script>
+        <script id="color-fragshader" type="x-shader/x-fragment">
+            //=============================================================================
+            // color.frag
+            //  
+            // Shader de fragmento para o YABH, simplesmente desenha a cor passado por 
+            // uniform na tela
+            //=============================================================================
+            // Quem precisa de floats de alta precisão, afinal?
+            precision lowp float;
+            //-----------------------------------------------------------------------------
+            // * Uniforms
+            //-----------------------------------------------------------------------------
+            uniform vec3 color; // A cor a ser desenhada
+            //-----------------------------------------------------------------------------
+            // * Ponto de entrada
+            //-----------------------------------------------------------------------------
+            void main(void) {
+                gl_FragColor = vec4(color, 1.0);
+            }
+        </script>
+        <script id="pixel-vxshader" type="x-shader/x-vertex">
+            //=============================================================================
+            // pixel.vert
+            //
+            // Shader de vértice para o YABH, mostra os objetos do jogo na tela
+            // transformando os valores do buffer em coordenadas de píxel
+            //=============================================================================
+            // Quem precisa de floats de alta precisão, afinal?
+            precision lowp float;
+
+            // Atributo de posição do vértice
+            attribute vec3 vertexPosition;
+            //-----------------------------------------------------------------------------
+            // * Uniforms
+            //-----------------------------------------------------------------------------
+            uniform vec2 screenSize;    // Dimensões da tela (em píxels)
+            uniform vec2 size;          // Dimensões do retângulo (em píxels)
+            uniform vec2 translate;     // Translação aplicada ao retângulo
+            //-----------------------------------------------------------------------------
+            // * Ponto de entrada
+            //-----------------------------------------------------------------------------
+            void main(void) {
+                gl_Position = vec4(
+                    (vertexPosition.x * size.x + translate.x * 2.0) / screenSize.x, 
+                    -(vertexPosition.y * size.y + translate.y * 2.0) / screenSize.y, 
+                    0.0, 
+                    1.0
+                );
+            }
+        </script>
     </head>
     <body>
         <script type="text/javascript" src="scripts/main.js"></script>
