@@ -417,8 +417,8 @@ __class('Projectile', 'GameObject', {
             if (this._shooter instanceof Enemy) {
                 if (obj instanceof Player &&
                         this._hitbox.collidesWith(obj.hitbox)) {
-                            setTimeout(Game.restart.bind(Game), 20);
                             this.dispose();
+                            Game.restart();
                         }
             } else {
                 if (obj instanceof Enemy &&

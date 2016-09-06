@@ -8,12 +8,14 @@
 // Inicialização
 Graphics.initialize();
 AudioManager.initialize();
+AudioManager._mute = true;
 Game.start();
 
 // Loop principal
 function mainLoop() {
+    Graphics.clear();
     Game.update();
-    Graphics.update();
+    Graphics.render();
     requestAnimationFrame(mainLoop);
 }
 

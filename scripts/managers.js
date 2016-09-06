@@ -126,8 +126,11 @@ var Game = {
     //-----------------------------------------------------------------------
     update: function() {
         var i = 0, e = false;
-        while (i < this._objects.length && !e)
-            e = this._objects[i++] instanceof Enemy;
+        while (i < this._objects.length && !e) {
+            e = this._objects[i] instanceof Enemy;
+            e = e || this._objects[i] instanceof Projectile && this._objects[i].shooter instanceof Enemy;
+            i++;
+        }
 
         if (!e) {
             this.currentStage.terminate();
@@ -160,6 +163,7 @@ var Game = {
         this.forEachObject(function (obj) {
             obj.dispose();
         });
+        Graphics.fullClear();
         this._objects = [];
     },
     //-----------------------------------------------------------------------
@@ -185,7 +189,7 @@ var Game = {
     //-----------------------------------------------------------------------
     _checkFinished: function() {
         if (this._stageID >= this._stages.length) {
-            //console.log('Você zerou o jogo!');
+            console.log('Você zerou o jogo!');
             this._stageID = 0;
             this.restart();
         }
@@ -358,10 +362,28 @@ var Graphics = {
         document.body.appendChild(this._canvas);
     },
     //-----------------------------------------------------------------------
+    // * Limpa a tela toda
+    //-----------------------------------------------------------------------
+    fullClear: function() {
+        this._context.clearRect(0, 0, this.width, this.height);
+    },
+    //-----------------------------------------------------------------------
+    // * Limpa a tela
+    //-----------------------------------------------------------------------
+    clear: function() {
+        Game.forEachObject(function(obj) {
+            this._context.clearRect(
+                (obj.hitbox.left + 0.5)   | 0, 
+                (obj.hitbox.top + 0.5)    | 0,
+                (obj.hitbox.width + 0.5)  | 0,
+                (obj.hitbox.height + 0.5) | 0
+            );
+        }.bind(this));
+    },
+    //-----------------------------------------------------------------------
     // * Desenha tudo na tela
     //-----------------------------------------------------------------------
-    update: function() {
-        this._context.clearRect(0, 0, this.width, this.height)
+    render: function() {
         var lastColor = 0;
         Game.forEachObject(function(obj) {
             if (obj.color != lastColor) {
@@ -371,20 +393,12 @@ var Graphics = {
                 lastColor = obj.color;
             }
 
-            if (obj instanceof Projectile)
-                this._context.fillRect(
-                    obj.hitbox.left, 
-                    obj.hitbox.top,
-                    obj.hitbox.width,
-                    obj.hitbox.height
-                );
-            else
-                this._context.fillRect(
-                    Math.round(obj.hitbox.left), 
-                    Math.round(obj.hitbox.top),
-                    Math.round(obj.hitbox.width),
-                    Math.round(obj.hitbox.height)
-                );
+            this._context.fillRect(
+                (obj.hitbox.left + 0.5)   | 0, 
+                (obj.hitbox.top + 0.5)    | 0,
+                (obj.hitbox.width + 0.5)  | 0,
+                (obj.hitbox.height + 0.5) | 0
+            );
         }.bind(this));
     }
 };

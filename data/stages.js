@@ -51,22 +51,26 @@ Game.createStage({
 
     // Criação dos inimigos
     initialize: function() {
-        Game.createEnemies(
+        this._enemies = Game.createEnemies(
             [Graphics.width / 6, 32, 'static', 15, 'arc1'],
             [Graphics.width * 5 / 6, 32, 'static', 15, 'arc2']
         );
 
         this._i1 = setInterval(function() {
+            if (!this._enemies.some(function (e) { return e.health > 0; }))
+                return;
             Game.createEnemy(
                 Graphics.width - 1, Math.random() * 64 + 32, 
                 'straightLeft', 
                 1, 
                 'spiral2');
-        }, 3000);
+        }.bind(this), 3000);
 
         this._i2 = setInterval(function() {
+            if (!this._enemies.some(function (e) { return e.health > 0; }))
+                return;
             Game.createEnemy(1, Math.random() * 64 + 32, 'straightRight', 1, 'spiral2');
-        }, 6000);
+        }.bind(this), 6000);
     },
 
     // Finalização do estágio
@@ -116,17 +120,21 @@ Game.createStage({
 
     // Criação dos inimigos
     initialize: function() {
-        Game.createEnemies(
+        this._enemies = Game.createEnemies(
             [Graphics.width / 3, 96,     'static', 5, 'circle'],
             [Graphics.width * 2 / 3, 96, 'static', 5, 'circle'],
             [Graphics.width / 2, 192, 'static', 5, 'circle']
         );
 
         this._i1 = setInterval(function() {
+            if (!this._enemies.some(function (e) { return e.health > 0; }))
+                return;
             Game.createEnemy(0, 32, 'circleRight', 10, 'arc1');
         }, 2000);
 
         this._i2 = setInterval(function() {
+            if (!this._enemies.some(function (e) { return e.health > 0; }))
+                return;
             Game.createEnemy(Graphics.width - 1, 32, 'circleLeft', 10, 'arc2');
         }, 3000);
     },

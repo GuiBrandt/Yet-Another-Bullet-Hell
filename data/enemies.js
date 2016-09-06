@@ -335,23 +335,24 @@ Game.createActionPattern('boss1', {
             switch (this._deathCount) {
                 case 1:
                 case 2:
-                    if (this._fireTimer % Math.floor(10 - pct * 4) == 0)
+                    if (this._fireTimer % Math.floor(10 - pct * 3) == 0)
                         shootSpiral(-1);
                     if (this._deathCount == 1)
                         break;
                 case 0:
-                    if (this._fireTimer % Math.floor(10 - pct * 4) == 0)
+                    if (this._fireTimer % Math.floor(10 - pct * 3) == 0)
                         shootSpiral(1);
                     break;
                 case 3:
-                    for (var i = 0; i < 2; i++)
-                        Game.createProjectile(
-                            this._hitbox.x, this._hitbox.y,
-                            new Movement([
-                                new Velocity(2, Math.random() * Math.PI * 2)
-                            ]),
-                            this
-                        );
+                    if (this._fireTimer % 2 == 0)
+                        for (var i = 0; i < 2; i++)
+                            Game.createProjectile(
+                                this._hitbox.x, this._hitbox.y,
+                                new Movement([
+                                    new Velocity(2, Math.random() * Math.PI * 2)
+                                ]),
+                                this
+                            );
             }
 
         var r = 0xff, n = Math.floor(0xFF - pct * 0xFF) & 0xFF;
