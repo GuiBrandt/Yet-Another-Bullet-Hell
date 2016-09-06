@@ -26,7 +26,7 @@ Game.createStage({
         this._i1 = setInterval(function() {
             if (m.health <= 0) return;
             var e = Game.createEnemy(
-                Math.random() * Graphics.width, 0, 
+                Math.random() * Graphics.width, 0,
                 new Movement([new Velocity(3, Math.random() * Math.PI / 4 + Math.PI / 4)]), 
                 1, 
                 'shootPlayer');
@@ -130,13 +130,13 @@ Game.createStage({
             if (!this._enemies.some(function (e) { return e.health > 0; }))
                 return;
             Game.createEnemy(0, 32, 'circleRight', 10, 'arc1');
-        }, 2000);
+        }.bind(this), 2000);
 
         this._i2 = setInterval(function() {
             if (!this._enemies.some(function (e) { return e.health > 0; }))
                 return;
             Game.createEnemy(Graphics.width - 1, 32, 'circleLeft', 10, 'arc2');
-        }, 3000);
+        }.bind(this), 3000);
     },
 
     // Finalização do estágio
