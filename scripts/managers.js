@@ -163,6 +163,9 @@ var Game = {
         this.forEachObject(function (obj) {
             obj.dispose();
         });
+        if (!!this._player)
+            this._player.dispose();
+        this._player = null;
         Graphics.fullClear();
         this._objects = [];
     },
