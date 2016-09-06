@@ -294,7 +294,22 @@ var Game = {
     //-----------------------------------------------------------------------
     add: function(obj) {
         __checkClass(obj, GameObject, 'obj');
-        this._objects.push(obj);
+        
+        var beg = 0,
+            end = this._objects.length - 1,
+            i = 0;
+        while (beg <= end) {
+            i = Math.floor((beg + end) / 2);
+            if (this._objects[i] == obj) return;
+            if (this._objects[i].color == obj.color)
+                break;
+            if (this._objects[i].color > obj.color)
+                end = i - 1;
+            else if (this._objects[i].color < obj.color)
+                beg = i + 1;
+        }
+
+        this._objects.splice(i, 0, obj);
     },
     //-----------------------------------------------------------------------
     // * Remove um objeto do jogo
@@ -347,17 +362,29 @@ var Graphics = {
     //-----------------------------------------------------------------------
     update: function() {
         this._context.clearRect(0, 0, this.width, this.height)
+        var lastColor = 0;
         Game.forEachObject(function(obj) {
-            var c = obj.color.toString(16),
-                s = '#' + "000000".substring(0, 6 - c.length) + c;
-            if (s != this._context.fillStyle)
+            if (obj.color != lastColor) {
+                var c = obj.color.toString(16),
+                    s = '#' + "000000".substring(0, 6 - c.length) + c;
                 this._context.fillStyle = s;
-            this._context.fillRect(
-                obj.hitbox.left, 
-                obj.hitbox.top,
-                obj.hitbox.width,
-                obj.hitbox.height
-            );
+                lastColor = obj.color;
+            }
+
+            if (obj instanceof Projectile)
+                this._context.fillRect(
+                    obj.hitbox.left, 
+                    obj.hitbox.top,
+                    obj.hitbox.width,
+                    obj.hitbox.height
+                );
+            else
+                this._context.fillRect(
+                    Math.round(obj.hitbox.left), 
+                    Math.round(obj.hitbox.top),
+                    Math.round(obj.hitbox.width),
+                    Math.round(obj.hitbox.height)
+                );
         }.bind(this));
     }
 };
