@@ -358,19 +358,100 @@ var Graphics = {
         this.width = 640;
         this.height = 480;
         this._canvas.id = "GameCanvas";
-        this._context = this._canvas.getContext('2d');
+        this._initWebGL();
+        this._initShaders();
+        this._initVerticesBuffer();
+
         document.body.appendChild(this._canvas);
+    },
+    //-----------------------------------------------------------------------
+    // * Inicializa o WebGL
+    //-----------------------------------------------------------------------
+    _initWebGL: function() {
+        try {
+            window.gl = this._canvas.getContext('webgl') || 
+                            this._canvas.getContext('experimental-webgl');
+        } catch(e) {}
+        window.gl.viewport(0, 0, this._canvas.width, this._canvas.height);
+    },
+    //-----------------------------------------------------------------------
+    // * Inicializa os shaders usados com o WebGL
+    //-----------------------------------------------------------------------
+    _initShaders: function() {
+        var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fragmentShader,
+            "precision highp float;" +
+            "uniform vec3 color;" +
+            "void main(void) {" + 
+                "gl_FragColor = vec4(color, 1.0);" +
+            "}");
+        gl.compileShader(fragmentShader);
+
+        if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {  
+            console.error("An error occurred compiling the shaders: " + gl.getShaderInfoLog(fragmentShader));  
+            return null;
+        }
+
+        var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vertexShader, 
+            "precision highp float;" +
+            "attribute vec3 aVertexPosition;" +
+            "uniform float screenWidth;" +
+            "uniform float screenHeight;" +
+            "uniform vec2 scale;" +
+            "uniform vec2 translate;" +
+            "void main(void) {" +
+                "gl_Position = vec4(" + 
+                    "(aVertexPosition.x * scale.x + translate.x * 2.0) / screenWidth," + 
+                    "-(aVertexPosition.y * scale.y + translate.y * 2.0) / screenHeight" + 
+                    ", 0.0, 1.0" +
+                ");" +
+            "}");
+        gl.compileShader(vertexShader);
+        if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {  
+            console.error("An error occurred compiling the shaders: " + gl.getShaderInfoLog(vertexShader));  
+            return null;
+        }
+
+        this._shaderProgram = gl.createProgram();
+        gl.attachShader(this._shaderProgram, vertexShader);
+        gl.attachShader(this._shaderProgram, fragmentShader);
+        gl.linkProgram(this._shaderProgram);
+        if (!gl.getProgramParameter(this._shaderProgram, gl.LINK_STATUS)) {
+            alert("Não foi possível inicializar o programa de shaders");
+        }
+        gl.useProgram(this._shaderProgram);
+
+        this._vertPosAttr = gl.getAttribLocation(this._shaderProgram, "aVertexPosition");
+        gl.enableVertexAttribArray(this._vertPosAttr);
+    },
+    //-----------------------------------------------------------------------
+    // * Inicializa o buffer de vértices para um quadrado
+    //-----------------------------------------------------------------------
+    _initVerticesBuffer: function() {
+        this._vBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
+
+        var vertices = [
+            1.0,  1.0,  0.0,
+            -1.0, 1.0,  0.0,
+            1.0,  -1.0, 0.0,
+            -1.0, -1.0, 0.0
+        ];
+
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     },
     //-----------------------------------------------------------------------
     // * Limpa a tela toda
     //-----------------------------------------------------------------------
     fullClear: function() {
-        this._context.clearRect(0, 0, this.width, this.height);
     },
     //-----------------------------------------------------------------------
     // * Limpa a tela
     //-----------------------------------------------------------------------
     clear: function() {
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        return;
         Game.forEachObject(function(obj) {
             this._context.clearRect(
                 (obj.hitbox.left + 0.5)   | 0, 
@@ -384,21 +465,30 @@ var Graphics = {
     // * Desenha tudo na tela
     //-----------------------------------------------------------------------
     render: function() {
-        var lastColor = 0;
-        Game.forEachObject(function(obj) {
-            if (obj.color != lastColor) {
-                var c = obj.color.toString(16),
-                    s = '#' + "000000".substring(0, 6 - c.length) + c;
-                this._context.fillStyle = s;
-                lastColor = obj.color;
-            }
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
+        gl.vertexAttribPointer(this._vertPosAttr, 3, gl.FLOAT, false, 0, 0);
 
-            this._context.fillRect(
-                (obj.hitbox.left + 0.5)   | 0, 
-                (obj.hitbox.top + 0.5)    | 0,
-                (obj.hitbox.width + 0.5)  | 0,
-                (obj.hitbox.height + 0.5) | 0
+        var screenWidthUniform = gl.getUniformLocation(this._shaderProgram, 'screenWidth');
+        var screenHeightUniform = gl.getUniformLocation(this._shaderProgram, 'screenHeight');
+        var scaleUniform = gl.getUniformLocation(this._shaderProgram, 'scale');
+        var translateUniform = gl.getUniformLocation(this._shaderProgram, 'translate');
+        var colorUniform = gl.getUniformLocation(this._shaderProgram, 'color');
+        
+        gl.uniform1f(screenWidthUniform, this.width);
+        gl.uniform1f(screenHeightUniform, this.height);
+
+        Game.forEachObject(function(obj) {
+            gl.uniform2f(scaleUniform, obj._hitbox.width, obj._hitbox.height);
+            gl.uniform2f(translateUniform,
+                obj._hitbox.x - this.width / 2, 
+                obj._hitbox.y - this.height / 2
             );
+            gl.uniform3f(colorUniform,
+                ((obj.color >> 16) & 0xFF) / 255.0,
+                ((obj.color >> 8) & 0xFF) / 255.0,
+                (obj.color & 0xFF) / 255.0
+            );
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }.bind(this));
     }
 };
