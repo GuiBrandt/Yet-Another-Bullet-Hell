@@ -58,7 +58,7 @@
             precision lowp float;
 
             // Atributo de posição do vértice
-            attribute vec2 vertexPosition;
+            attribute vec3 vertexPosition;
             //-----------------------------------------------------------------------------
             // * Uniforms
             //-----------------------------------------------------------------------------
@@ -70,8 +70,8 @@
             //-----------------------------------------------------------------------------
             void main(void) {
                 gl_Position = vec4(
-                    (vertexPosition.x * size.x + translate.x * 2.0) / screenSize.x, 
-                    -(vertexPosition.y * size.y + translate.y * 2.0) / screenSize.y, 
+                    (vertexPosition.x * size.x + translate.x * 2.0 - screenSize.x) / screenSize.x, 
+                    -(vertexPosition.y * size.y + translate.y * 2.0 - screenSize.y) / screenSize.y, 
                     0.0, 
                     1.0
                 );

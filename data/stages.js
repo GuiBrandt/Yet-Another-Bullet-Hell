@@ -121,9 +121,9 @@ Game.createStage({
     // Criação dos inimigos
     initialize: function() {
         this._enemies = Game.createEnemies(
-            [Graphics.width / 3, 96,     'static', 5, 'circle'],
-            [Graphics.width * 2 / 3, 96, 'static', 5, 'circle'],
-            [Graphics.width / 2, 192,    'static', 5, 'circle']
+            [Graphics.width / 3, 96,     'static', 5, 'circle1'],
+            [Graphics.width * 2 / 3, 96, 'static', 5, 'circle1'],
+            [Graphics.width / 2, 192,    'static', 5, 'circle1']
         );
 
         this._i1 = setInterval(function() {

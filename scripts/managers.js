@@ -301,7 +301,9 @@ var Game = {
     //-----------------------------------------------------------------------
     add: function(obj) {
         __checkClass(obj, GameObject, 'obj');
-        
+        if (this._objects.contains(obj))
+            return;
+            
         var beg = 0,
             end = this._objects.length - 1,
             i = 0;
@@ -425,6 +427,11 @@ var Graphics = {
             "vertexPosition"
         );
         gl.enableVertexAttribArray(this._vertPosAttr);
+        
+        var screenSizeUniform = gl.getUniformLocation(
+                this._shaderProgram, 'screenSize'
+        );
+        gl.uniform2f(screenSizeUniform, this.width, this.height);
     },
     //-----------------------------------------------------------------------
     // * Inicializa o buffer de vértices para um quadrado
@@ -469,10 +476,7 @@ var Graphics = {
         gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
         gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, false, 0, 0);
 
-        var screenSizeUniform = gl.getUniformLocation(
-                this._shaderProgram, 'screenSize'
-            ),
-            sizeUniform = gl.getUniformLocation(
+        var sizeUniform = gl.getUniformLocation(
                 this._shaderProgram, 'size'
             ),
             translateUniform = gl.getUniformLocation(
@@ -481,20 +485,33 @@ var Graphics = {
             colorUniform = gl.getUniformLocation(
                 this._shaderProgram, 'color'
             );
-        
-        gl.uniform2f(screenSizeUniform, this.width, this.height);
 
+        var lastColor = -1;
+        var lastW = 0, lastH = 0;
         Game.forEachObject(function(obj) {
-            gl.uniform2f(sizeUniform, obj._hitbox.width, obj._hitbox.height);
+            if (obj._hitbox.width != lastW || obj._hitbox.height != lastH) {
+                gl.uniform2f(sizeUniform, 
+                    obj._hitbox.width,
+                    obj._hitbox.height
+                );
+                lastW = obj._hitbox.width;
+                lastH = obj._hitbox.height;
+            }
+
+            if (lastColor != obj.color) {
+                gl.uniform3f(colorUniform,
+                    ((obj.color >> 16) & 0xFF) / 255.0,
+                    ((obj.color >> 8) & 0xFF) / 255.0,
+                    (obj.color & 0xFF) / 255.0
+                );
+                lastColor = obj.color;
+            }
+            
             gl.uniform2f(translateUniform,
-                obj._hitbox.x - this.width / 2, 
-                obj._hitbox.y - this.height / 2
+                obj._hitbox.x,
+                obj._hitbox.y
             );
-            gl.uniform3f(colorUniform,
-                ((obj.color >> 16) & 0xFF) / 255.0,
-                ((obj.color >> 8) & 0xFF) / 255.0,
-                (obj.color & 0xFF) / 255.0
-            );
+            
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }.bind(this));
     }
