@@ -316,7 +316,6 @@ var Game = {
                 beg = i + 1;
         }
 
-        Graphics.init(obj);
         this._objects.splice(i, 0, obj);
     },
     //-----------------------------------------------------------------------
@@ -324,7 +323,6 @@ var Game = {
     //-----------------------------------------------------------------------
     remove: function(obj) {
         __checkClass(obj, GameObject, 'obj');
-        Graphics.dispose(obj);
         this._objects.remove(obj);
     },
     //-----------------------------------------------------------------------
@@ -365,6 +363,7 @@ var Graphics = {
         this._canvas.id = "GameCanvas";
         this._initWebGL();
         this._initShaders();
+        this._initVerticesBuffer();
 
         document.body.appendChild(this._canvas);
     },
@@ -428,33 +427,17 @@ var Graphics = {
         gl.enableVertexAttribArray(this._vertPosAttr);
     },
     //-----------------------------------------------------------------------
-    // * Inicializa um objeto para renderização
-    //-----------------------------------------------------------------------
-    init: function(obj) {
-        this._initVerticesBuffer(obj);
-    },
-    //-----------------------------------------------------------------------
-    // * Libera um objeto da renderização
-    //-----------------------------------------------------------------------
-    dispose: function(obj) {
-        
-    },
-    //-----------------------------------------------------------------------
     // * Inicializa o buffer de vértices para um quadrado
     //-----------------------------------------------------------------------
-    _initVerticesBuffer: function(obj) {
-        __checkClass(obj, GameObject, 'obj');
-        
-        obj._vBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, obj._vBuffer);
-        var x = obj._hitbox.width / this.width;
-        var y = obj._hitbox.height / this.height;
-        
+    _initVerticesBuffer: function() {
+        this._vBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
+
         var vertices = [
-             x,  y, 0.0,
-            -x,  y, 0.0,
-             x, -y, 0.0,
-            -x, -y, 0.0
+             1.0,  1.0, 0.0,
+            -1.0,  1.0, 0.0,
+             1.0, -1.0, 0.0,
+            -1.0, -1.0, 0.0
         ];
 
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
@@ -483,20 +466,29 @@ var Graphics = {
     // * Desenha tudo na tela
     //-----------------------------------------------------------------------
     render: function() {
-        var translateUniform = gl.getUniformLocation(
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
+        gl.vertexAttribPointer(this._vertPosAttr, 3, gl.FLOAT, false, 0, 0);
+
+        var screenSizeUniform = gl.getUniformLocation(
+                this._shaderProgram, 'screenSize'
+            ),
+            sizeUniform = gl.getUniformLocation(
+                this._shaderProgram, 'size'
+            ),
+            translateUniform = gl.getUniformLocation(
                 this._shaderProgram, 'translate'
             ),
             colorUniform = gl.getUniformLocation(
                 this._shaderProgram, 'color'
             );
+        
+        gl.uniform2f(screenSizeUniform, this.width, this.height);
 
         Game.forEachObject(function(obj) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, obj._vBuffer);
-            gl.vertexAttribPointer(this._vertPosAttr, 3, gl.FLOAT, false, 0, 0);
-            
+            gl.uniform2f(sizeUniform, obj._hitbox.width, obj._hitbox.height);
             gl.uniform2f(translateUniform,
-                (obj._hitbox.x - this.width / 2) / this.width, 
-                (obj._hitbox.y - this.height / 2) / this.height
+                obj._hitbox.x - this.width / 2, 
+                obj._hitbox.y - this.height / 2
             );
             gl.uniform3f(colorUniform,
                 ((obj.color >> 16) & 0xFF) / 255.0,
