@@ -434,10 +434,10 @@ var Graphics = {
         gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
 
         var vertices = [
-             1.0,  1.0, 0.0,
-            -1.0,  1.0, 0.0,
-             1.0, -1.0, 0.0,
-            -1.0, -1.0, 0.0
+             1.0,  1.0,
+            -1.0,  1.0,
+             1.0, -1.0,
+            -1.0, -1.0,
         ];
 
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
@@ -467,7 +467,7 @@ var Graphics = {
     //-----------------------------------------------------------------------
     render: function() {
         gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
-        gl.vertexAttribPointer(this._vertPosAttr, 3, gl.FLOAT, false, 0, 0);
+        gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, false, 0, 0);
 
         var screenSizeUniform = gl.getUniformLocation(
                 this._shaderProgram, 'screenSize'
