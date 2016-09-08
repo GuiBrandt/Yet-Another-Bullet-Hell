@@ -128,7 +128,8 @@ var Game = {
         var i = 0, e = false;
         while (i < this._objects.length && !e) {
             e = this._objects[i] instanceof Enemy;
-            e = e || this._objects[i] instanceof Projectile && this._objects[i].shooter instanceof Enemy;
+            e = e || this._objects[i] instanceof Projectile && 
+                this._objects[i].shooter instanceof Enemy;
             i++;
         }
 
@@ -193,8 +194,7 @@ var Game = {
     _checkFinished: function() {
         if (this._stageID >= this._stages.length) {
             console.log('Você zerou o jogo!');
-            this._stageID = 0;
-            this.restart();
+            window.location = window.location;
         }
     },
     //-----------------------------------------------------------------------
@@ -301,7 +301,9 @@ var Game = {
     //-----------------------------------------------------------------------
     add: function(obj) {
         __checkClass(obj, GameObject, 'obj');
-        
+        if (this._objects.contains(obj))
+            return;
+            
         var beg = 0,
             end = this._objects.length - 1,
             i = 0;
@@ -361,19 +363,103 @@ var Graphics = {
         this.width = 640;
         this.height = 480;
         this._canvas.id = "GameCanvas";
-        this._context = this._canvas.getContext('2d');
+        this._initWebGL();
+        this._initShaders();
+        this._initVerticesBuffer();
+
         document.body.appendChild(this._canvas);
+    },
+    //-----------------------------------------------------------------------
+    // * Inicializa o WebGL
+    //-----------------------------------------------------------------------
+    _initWebGL: function() {
+        try {
+            window.gl = this._canvas.getContext('webgl') || 
+                            this._canvas.getContext('experimental-webgl');
+        } catch(e) {}
+        window.gl.viewport(0, 0, this._canvas.width, this._canvas.height);
+    },
+    //-----------------------------------------------------------------------
+    // * Carrega um shader pelo DOM
+    //-----------------------------------------------------------------------
+    _loadShader: function(name) {
+        var el = document.getElementById(name);
+        if (!!el)
+            return el.innerText;
+        else
+            throw new Error('Falha ao carregar shader `' + name + "'");
+    },
+    //-----------------------------------------------------------------------
+    // * Inicializa os shaders usados com o WebGL
+    //-----------------------------------------------------------------------
+    _initShaders: function() {
+
+        function compile(shader) {
+            gl.compileShader(shader);
+
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) 
+                throw new Error(
+                    "Erro de compilação no shader: " + 
+                        gl.getShaderInfoLog(shader)
+                );
+        }
+
+        var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fragmentShader, this._loadShader('color-fragshader'));
+        compile(fragmentShader);
+
+        var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vertexShader, this._loadShader('pixel-vxshader'));
+        compile(vertexShader);
+
+        this._shaderProgram = gl.createProgram();
+        gl.attachShader(this._shaderProgram, vertexShader);
+        gl.attachShader(this._shaderProgram, fragmentShader);
+        gl.linkProgram(this._shaderProgram);
+
+        if (!gl.getProgramParameter(this._shaderProgram, gl.LINK_STATUS))
+            throw new Error("Não foi possível inicializar os shaders");
+        
+        gl.useProgram(this._shaderProgram);
+
+        this._vertPosAttr = gl.getAttribLocation(
+            this._shaderProgram, 
+            "vertexPosition"
+        );
+        gl.enableVertexAttribArray(this._vertPosAttr);
+        
+        var screenSizeUniform = gl.getUniformLocation(
+                this._shaderProgram, 'screenSize'
+        );
+        gl.uniform2f(screenSizeUniform, this.width, this.height);
+    },
+    //-----------------------------------------------------------------------
+    // * Inicializa o buffer de vértices para um quadrado
+    //-----------------------------------------------------------------------
+    _initVerticesBuffer: function() {
+        this._vBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
+
+        var vertices = [
+             1.0,  1.0,
+            -1.0,  1.0,
+             1.0, -1.0,
+            -1.0, -1.0,
+        ];
+
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
     },
     //-----------------------------------------------------------------------
     // * Limpa a tela toda
     //-----------------------------------------------------------------------
     fullClear: function() {
-        this._context.clearRect(0, 0, this.width, this.height);
     },
     //-----------------------------------------------------------------------
     // * Limpa a tela
     //-----------------------------------------------------------------------
     clear: function() {
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        return;
         Game.forEachObject(function(obj) {
             this._context.clearRect(
                 (obj.hitbox.left + 0.5)   | 0, 
@@ -387,21 +473,46 @@ var Graphics = {
     // * Desenha tudo na tela
     //-----------------------------------------------------------------------
     render: function() {
-        var lastColor = 0;
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
+        gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, false, 0, 0);
+
+        var sizeUniform = gl.getUniformLocation(
+                this._shaderProgram, 'size'
+            ),
+            translateUniform = gl.getUniformLocation(
+                this._shaderProgram, 'translate'
+            ),
+            colorUniform = gl.getUniformLocation(
+                this._shaderProgram, 'color'
+            );
+
+        var lastColor = -1;
+        var lastW = 0, lastH = 0;
         Game.forEachObject(function(obj) {
-            if (obj.color != lastColor) {
-                var c = obj.color.toString(16),
-                    s = '#' + "000000".substring(0, 6 - c.length) + c;
-                this._context.fillStyle = s;
-                lastColor = obj.color;
+            if (obj._hitbox.width != lastW || obj._hitbox.height != lastH) {
+                gl.uniform2f(sizeUniform, 
+                    obj._hitbox.width,
+                    obj._hitbox.height
+                );
+                lastW = obj._hitbox.width;
+                lastH = obj._hitbox.height;
             }
 
-            this._context.fillRect(
-                (obj.hitbox.left + 0.5)   | 0, 
-                (obj.hitbox.top + 0.5)    | 0,
-                (obj.hitbox.width + 0.5)  | 0,
-                (obj.hitbox.height + 0.5) | 0
+            if (lastColor != obj.color) {
+                gl.uniform3f(colorUniform,
+                    ((obj.color >> 16) & 0xFF) / 255.0,
+                    ((obj.color >> 8) & 0xFF) / 255.0,
+                    (obj.color & 0xFF) / 255.0
+                );
+                lastColor = obj.color;
+            }
+            
+            gl.uniform2f(translateUniform,
+                obj._hitbox.x,
+                obj._hitbox.y
             );
+            
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }.bind(this));
     }
 };

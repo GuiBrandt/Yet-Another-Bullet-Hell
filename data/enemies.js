@@ -320,7 +320,7 @@ Game.createActionPattern('boss1', {
                     3/2*Math.PI + a * this._fireTimer + b
                 ];
                 
-                for (var j = 0; j < angles.length; j++)
+                for (var j = 0; j < angles.length; j++) {
                     Game.createProjectile(
                         this._hitbox.x, this._hitbox.y,
                         new Movement([
@@ -328,24 +328,42 @@ Game.createActionPattern('boss1', {
                         ]),
                         this
                     );
+                }
             }
+        }.bind(this);
+        
+        var shootCircle = function() {
+            var density = 42;
+            for (var i = 0; i < density; i++) {
+                Game.createProjectile(
+                    this._hitbox.x, this._hitbox.y,
+                    new Movement([new Velocity(2, Math.PI * 2 / density * i)]),
+                    this
+                );
+            }
+            AudioManager.playSe("audio/enemyShot01.m4a", 0.05, 0.5);
         }.bind(this);
 
         if (this._positioned)
             switch (this._deathCount) {
                 case 1:
                 case 2:
-                    if (this._fireTimer % Math.floor(10 - pct * 3) == 0)
+                    if (this._fireTimer % Math.floor(9 - pct * 2) == 0)
                         shootSpiral(-1);
-                    if (this._deathCount == 1)
+                    if (this._deathCount == 1) {
+                        if (this._fireTimer % 120 == 0)
+                            shootCircle();
                         break;
+                    }
                 case 0:
-                    if (this._fireTimer % Math.floor(10 - pct * 3) == 0)
+                    if (this._fireTimer % Math.floor(9 - pct * 2) == 0)
                         shootSpiral(1);
+                    if (this._fireTimer % 120 == 0)
+                        shootCircle();
                     break;
                 case 3:
                     if (this._fireTimer % 2 == 0)
-                        for (var i = 0; i < 2; i++)
+                        for (var i = 0; i < 2; i++) {
                             Game.createProjectile(
                                 this._hitbox.x, this._hitbox.y,
                                 new Movement([
@@ -353,6 +371,7 @@ Game.createActionPattern('boss1', {
                                 ]),
                                 this
                             );
+                        }
             }
 
         var r = 0xff, n = Math.floor(0xFF - pct * 0xFF) & 0xFF;
