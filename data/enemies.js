@@ -335,12 +335,12 @@ Game.createActionPattern('boss1', {
             switch (this._deathCount) {
                 case 1:
                 case 2:
-                    if (this._fireTimer % Math.floor(10 - pct * 3) == 0)
+                    if (this._fireTimer % Math.floor(9 - pct * 2) == 0)
                         shootSpiral(-1);
                     if (this._deathCount == 1)
                         break;
                 case 0:
-                    if (this._fireTimer % Math.floor(10 - pct * 3) == 0)
+                    if (this._fireTimer % Math.floor(9 - pct * 2) == 0)
                         shootSpiral(1);
                     break;
                 case 3:

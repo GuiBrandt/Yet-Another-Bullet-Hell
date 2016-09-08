@@ -128,7 +128,8 @@ var Game = {
         var i = 0, e = false;
         while (i < this._objects.length && !e) {
             e = this._objects[i] instanceof Enemy;
-            e = e || this._objects[i] instanceof Projectile && this._objects[i].shooter instanceof Enemy;
+            e = e || this._objects[i] instanceof Projectile && 
+                this._objects[i].shooter instanceof Enemy;
             i++;
         }
 
@@ -193,8 +194,7 @@ var Game = {
     _checkFinished: function() {
         if (this._stageID >= this._stages.length) {
             console.log('Você zerou o jogo!');
-            this._stageID = 0;
-            this.restart();
+            window.location = window.location;
         }
     },
     //-----------------------------------------------------------------------
@@ -469,10 +469,18 @@ var Graphics = {
         gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
         gl.vertexAttribPointer(this._vertPosAttr, 3, gl.FLOAT, false, 0, 0);
 
-        var screenSizeUniform = gl.getUniformLocation(this._shaderProgram, 'screenSize');
-        var sizeUniform = gl.getUniformLocation(this._shaderProgram, 'size');
-        var translateUniform = gl.getUniformLocation(this._shaderProgram, 'translate');
-        var colorUniform = gl.getUniformLocation(this._shaderProgram, 'color');
+        var screenSizeUniform = gl.getUniformLocation(
+                this._shaderProgram, 'screenSize'
+            ),
+            sizeUniform = gl.getUniformLocation(
+                this._shaderProgram, 'size'
+            ),
+            translateUniform = gl.getUniformLocation(
+                this._shaderProgram, 'translate'
+            ),
+            colorUniform = gl.getUniformLocation(
+                this._shaderProgram, 'color'
+            );
         
         gl.uniform2f(screenSizeUniform, this.width, this.height);
 
