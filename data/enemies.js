@@ -36,6 +36,31 @@ Game.createActionPattern('still', {
     death: explode
 });
 //=============================================================================
+// ** straightUp
+//-----------------------------------------------------------------------------
+// Atira para cima
+//=============================================================================
+Game.createActionPattern('straightUp', {
+    //-----------------------------------------------------------------------
+    // * Inicialização
+    //-----------------------------------------------------------------------
+    initialize: function() {
+        this._fireTimer = 0;
+    },
+    //-----------------------------------------------------------------------
+    // * Atualização
+    //-----------------------------------------------------------------------
+    update: function() {
+        if (this._fireTimer % 5 == 0)
+            Game.createProjectile(this._hitbox.x, this._hitbox.y, 'straightUp', this);
+        this._fireTimer++;
+    },
+    //-----------------------------------------------------------------------
+    // * Efeito de morte
+    //-----------------------------------------------------------------------
+    death: function() {}
+});
+//=============================================================================
 // ** shootPlayer
 //-----------------------------------------------------------------------------
 // Atira em direção do jogador
@@ -399,7 +424,7 @@ Game.createActionPattern('boss1', {
             case 2:
                 this.movement = new Movement([new Velocity(0.3, Math.PI)]);
                 this.movement.onUpdate = function() {
-                    if (this._velocities[0].angle == 0 && 
+                    if (this._velocities[0].angle == 0 &&
                             this._object.hitbox.x >= (Graphics.width * 2 / 3))
                         this._velocities[0].angle = Math.PI;
                     else if (this._velocities[0].angle == Math.PI && 

@@ -62,7 +62,8 @@ Game.createMovement('leftRight', [
         new Velocity(4, Math.PI)
     ],
     function() {
-        if (!this._timer) this._timer = 0;
+        if (!this._timer) 
+            this._timer = 0;
         this._timer++;
         this._timer %= 90;
         if (this._timer == 0)
@@ -76,7 +77,7 @@ Game.createMovement('leftRight', [
 // 4px/frame
 //=============================================================================
 Game.createMovement('circleRight', [
-        new Velocity(4, 0)
+        new Velocity(2, 0)
     ],
     function() {
         this._velocities[0].angle += 0.1;
@@ -89,7 +90,7 @@ Game.createMovement('circleRight', [
 // 4px/frame
 //=============================================================================
 Game.createMovement('circleLeft', [
-        new Velocity(4, -Math.PI)
+        new Velocity(2, -Math.PI)
     ],
     function() {
         this._velocities[0].angle -= 0.1;
@@ -161,7 +162,7 @@ Game.createMovement('targetPlayer', [
 //=============================================================================
 Game.createMovement('player', [new Velocity(0, 0)],
     function() {
-        this._velocities[0].module = Input.shiftPressed() ? 1.5 : 4;
+        this._velocities[0].module = Input.shiftPressed() ? 1.25 : 3;
         var t = ([
             0,
             Math.PI * 3 / 4,    Math.PI / 2,        Math.PI / 4,

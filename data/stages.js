@@ -109,11 +109,11 @@ Game.createStage({
 //=============================================================================
 Game.createStage({
     // Cores legais
-    backgroundColor:        0xffffff,
-    playerColor:            0x00aaff,
+    backgroundColor:        0xFFFFFF,
+    playerColor:            0x00AAFF,
     enemyColor:             0x000000,
-    playerProjectileColor:  0x00ff00,
-    enemyProjectileColor:   0xff0000,
+    playerProjectileColor:  0x00FF00,
+    enemyProjectileColor:   0xFF0000,
 
     // Música
     bgm: ["audio/tetris.mp3"],
@@ -143,5 +143,38 @@ Game.createStage({
     terminate: function() {
         clearInterval(this._i1);
         clearInterval(this._i2);
+    }
+});
+
+Game.createStage({
+    // Cores legais
+    backgroundColor:        0xFFFFFF,
+    playerColor:            0x00AAFF,
+    enemyColor:             0x000000,
+    playerProjectileColor:  0x00FF00,
+    enemyProjectileColor:   0xFF0000,
+    
+    // Música
+    bgm: ["audio/tetris.mp3"],
+    
+    // Criação dos inimigos
+    initialize: function() {
+        this._touts = [];
+        this._e = Game.createEnemy(Graphics.width / 5, 32, 'rightLeft', 10, 'spiral1');
+        this._i1 = setInterval(function() {
+            if (this._e.health <= 0)
+                return;
+            Game.createEnemy(64, Graphics.height - 64, 'spiralUp', 5, 'circle1');
+            this._touts.push(setTimeout(function() {
+                Game.createEnemy(Graphics.width - 64, 64, 'spiralDown', 5, 'circle1');
+            }, 1000));
+        }.bind(this), 3000);
+    },
+
+    // Finalização do estágio
+    terminate: function() {
+        clearInterval(this._i1);
+        for (var i = 0; i < this._touts.length; i++)
+            clearTimeout(this._touts[i]);
     }
 });
