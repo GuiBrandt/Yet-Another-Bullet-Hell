@@ -621,3 +621,47 @@ var AudioManager = {
         return se;
     }
 };
+//=============================================================================
+// ** TextManager
+//-----------------------------------------------------------------------------
+// Controla o texto na tela
+//=============================================================================
+var TextManager = {
+    //-----------------------------------------------------------------------
+    // * Inicializa o texto
+    //-----------------------------------------------------------------------
+    initialize: function() {
+        this._elements = [];
+    },
+    //-----------------------------------------------------------------------
+    // * Mostra um texto na tela e retorna o ID do texto
+    //      text    : Texto a mostrar
+    //      x       : Posição X do texto na tela
+    //      y       : Posição Y do texto na tela
+    //      style   : Estilo CSS do texto. Opcional.
+    //-----------------------------------------------------------------------
+    create: function(text, x, y, style) {
+        __checkType(text, 'string', 'text');
+        __checkType(x, 'number', 'x');
+        __checkType(y, 'number', 'y');
+        
+        style = style || "";
+        __checkType(style, 'string', 'style');
+        
+        var txt = document.createElement('span');
+        txt.innerText = text.replace('<', '&lt;').replace('>', '&gt;');
+        txt.style = "position: absolute; left: "  + x + 
+                        "; top: " + y + ";"
+        txt.style += style;
+        this._elements.push(txt);
+        return this._elements.length - 1;
+    },
+    //-----------------------------------------------------------------------
+    // * Apaga um texto da tela
+    //      id  : ID do elemento
+    //-----------------------------------------------------------------------
+    remove: function(id) {
+        if (this._elements.length > id)
+            this._elements.splice(id, 1);
+    }
+};
