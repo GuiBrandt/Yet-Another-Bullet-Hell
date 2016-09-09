@@ -6,7 +6,7 @@
 "use strict";
 
 // Inicialização
-Graphics.initialize();
+Graphics.initialize(); // Graphics.initialize(false);
 AudioManager.initialize();
 Game.start();
 

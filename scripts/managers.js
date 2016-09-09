@@ -358,16 +358,34 @@ var Graphics = {
     //-----------------------------------------------------------------------
     // * Inicializa a parte gráfica do jogo
     //-----------------------------------------------------------------------
-    initialize: function() {
+    initialize: function(webgl) {
+
+        if (webgl == undefined || webgl == null)
+            webgl = true;
+        __checkType(webgl, 'boolean', 'webgl');
+
+        this._useWebGL = webgl;
+
         this._canvas = document.createElement('canvas');
+        this._canvas.id = "GameCanvas";
         this.width = 640;
         this.height = 480;
-        this._canvas.id = "GameCanvas";
-        this._initWebGL();
-        this._initShaders();
-        this._initVerticesBuffer();
+
+        if (this._useWebGL) {
+            this._initWebGL();
+            this._initShaders();
+            this._initVerticesBuffer();
+        } else {
+            this._initCanvas();
+        }
 
         document.body.appendChild(this._canvas);
+    },
+    //-----------------------------------------------------------------------
+    // * Inicializa o contexto do canvas
+    //-----------------------------------------------------------------------
+    _initCanvas: function() {
+        this._canvasContext = this._canvas.getContext('2d');
     },
     //-----------------------------------------------------------------------
     // * Inicializa o WebGL
@@ -376,8 +394,13 @@ var Graphics = {
         try {
             window.gl = this._canvas.getContext('webgl') || 
                             this._canvas.getContext('experimental-webgl');
-        } catch(e) {}
-        window.gl.viewport(0, 0, this._canvas.width, this._canvas.height);
+            if (!window.gl)
+                throw new Error();
+            window.gl.viewport(0, 0, this._canvas.width, this._canvas.height);
+        } catch(e) {
+            this._useWebGL = false;
+            this._initCanvas();
+        }
     },
     //-----------------------------------------------------------------------
     // * Carrega um shader pelo DOM
@@ -453,26 +476,30 @@ var Graphics = {
     // * Limpa a tela toda
     //-----------------------------------------------------------------------
     fullClear: function() {
+        if (this._useWebGL)
+            return;
+        this._canvasContext.clearRect(0, 0, this.width, this.height);
     },
     //-----------------------------------------------------------------------
     // * Limpa a tela
     //-----------------------------------------------------------------------
     clear: function() {
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        return;
-        Game.forEachObject(function(obj) {
-            this._context.clearRect(
-                (obj.hitbox.left + 0.5)   | 0, 
-                (obj.hitbox.top + 0.5)    | 0,
-                (obj.hitbox.width + 0.5)  | 0,
-                (obj.hitbox.height + 0.5) | 0
-            );
-        }.bind(this));
+        if (this._useWebGL)
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        else
+            Game.forEachObject(function(obj) {
+                this._canvasContext.clearRect(
+                    (obj.hitbox.left + 0.5)   | 0, 
+                    (obj.hitbox.top + 0.5)    | 0,
+                    (obj.hitbox.width + 0.5)  | 0,
+                    (obj.hitbox.height + 0.5) | 0
+                );
+            }.bind(this));
     },
     //-----------------------------------------------------------------------
-    // * Desenha tudo na tela
+    // * Desenha tudo na tela com WebGL
     //-----------------------------------------------------------------------
-    render: function() {
+    _renderWebGL: function() {
         gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
         gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, false, 0, 0);
 
@@ -514,6 +541,36 @@ var Graphics = {
             
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }.bind(this));
+    },
+    //-----------------------------------------------------------------------
+    // * Desenha tudo na tela com canvas
+    //-----------------------------------------------------------------------
+    _renderCanvas: function() {
+        var lastColor = -1;
+        Game.forEachObject(function (obj) {
+            if (lastColor != obj.color) {
+                var c = obj.color.toString(16);
+                this._canvasContext.fillStyle = '#' + 
+                    "000000".substring(0, 6 - c.length) + c;
+                lastColor = c;
+            }
+
+            this._canvasContext.fillRect(
+                (obj.hitbox.left + 0.5)   | 0, 
+                (obj.hitbox.top + 0.5)    | 0,
+                (obj.hitbox.width + 0.5)  | 0,
+                (obj.hitbox.height + 0.5) | 0
+            );
+        }.bind(this));
+    },
+    //-----------------------------------------------------------------------
+    // * Desenha tudo na tela
+    //-----------------------------------------------------------------------
+    render: function() {
+        if (this._useWebGL)
+            this._renderWebGL();
+        else
+            this._renderCanvas();
     }
 };
 Object.defineProperties(Graphics, {
