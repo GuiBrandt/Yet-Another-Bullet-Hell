@@ -114,6 +114,7 @@ var Game = {
     _actionPatterns: {},
     _stageID: 0,
     _pause: false,
+    _showText: true,
     //-----------------------------------------------------------------------
     // * Começa o jogo
     //-----------------------------------------------------------------------
@@ -141,7 +142,7 @@ var Game = {
 
         if (Input._keysDown.contains(17))
             return this.restart();
-        if (Input._keysDown.contains(27))
+        if (Input._keysDown.contains(27) || Input._keysDown.contains(226))
             this._pause = true;
         else if (Input.actionPressed())
             this._pause = false;
@@ -177,7 +178,8 @@ var Game = {
         if (!!this.currentStage) {
             Graphics.backgroundColor = this.currentStage.backgroundColor;
             AudioManager.playBgm.apply(AudioManager, this.currentStage.bgm);
-            this.currentStage.initialize();
+            this.currentStage.initialize(!this._showText);
+            this._showText = false;
         } else
             this.nextStage();
     },
@@ -186,6 +188,7 @@ var Game = {
     //-----------------------------------------------------------------------
     nextStage: function() {
         this._stageID++;
+        this._showText = true;
         this._checkFinished();
     },
     //-----------------------------------------------------------------------
@@ -340,6 +343,12 @@ Object.defineProperties(Game, {
     currentStage: {
         get: function() {
             return this._stages[this._stageID];
+        }
+    },
+
+    currentStageID: {
+        get: function() {
+            return this._stageID + 1;
         }
     },
 
@@ -697,28 +706,78 @@ var TextManager = {
     //      y       : Posição Y do texto na tela
     //      style   : Estilo CSS do texto. Opcional.
     //-----------------------------------------------------------------------
-    create: function(text, x, y, style) {
+    createText: function(text, x, y, style) {
         __checkType(text, 'string', 'text');
-        __checkType(x, 'number', 'x');
-        __checkType(y, 'number', 'y');
-        
-        style = style || "";
-        __checkType(style, 'string', 'style');
+        __checkType(x, 'string', 'x');
+        __checkType(y, 'string', 'y');
+
+        style = style || {};
+        __checkType(style, 'object', 'style');
         
         var txt = document.createElement('span');
         txt.innerText = text.replace('<', '&lt;').replace('>', '&gt;');
-        txt.style = "position: absolute; left: "  + x + 
-                        "; top: " + y + ";"
-        txt.style += style;
+        txt.style.zIndex = 1;
+        txt.style.position = 'absolute'; 
+        txt.style.left = x;
+        txt.style.top = y;
+
+        for (var prop in style)
+            txt.style[prop] = style[prop];
+
+        document.body.appendChild(txt);
         this._elements.push(txt);
         return this._elements.length - 1;
+    },
+    //-----------------------------------------------------------------------
+    // * Obtém o DOM de um texto
+    //-----------------------------------------------------------------------
+    getText: function(id) {
+        return this._elements[id];
     },
     //-----------------------------------------------------------------------
     // * Apaga um texto da tela
     //      id  : ID do elemento
     //-----------------------------------------------------------------------
-    remove: function(id) {
-        if (this._elements.length > id)
+    removeText: function(id) {
+        if (this._elements.length > id) {
+            document.body.removeChild(this._elements[id]);
             this._elements.splice(id, 1);
+        }
+    },
+    //-----------------------------------------------------------------------
+    // * Cria um texto para nome de fase
+    //      n       : Número da fase
+    //      name    : Nome da fase
+    //-----------------------------------------------------------------------
+    createStageText: function(n, name) {
+        var id = this.createText('' + n + ' - ' + name, '50%', '50%', {
+            transform: 'translateX(-50%)',
+            fontSize: '22pt',
+            webkitTouchCallout: 'none',
+            webkitUserSelect: 'none',
+            mozUserSelect: 'none',
+            msUserSelect: 'none',
+            userSelect: 'none'
+        });
+        var t = this._elements[id];
+        t.style.opacity = 0.0;
+
+        var fadein = setInterval(function() {
+            t.style.opacity -= -0.06;
+            if (t.style.opacity >= 1.0) {
+                setTimeout(function() {
+                    var fadeout = setInterval(function() {
+                        t.style.opacity -= 0.06;
+                        if (t.style.opacity <= 0.0) {
+                            TextManager.removeText(id);
+                            clearInterval(fadeout);
+                        }
+                    }, 16);
+                }, 2000);
+                clearInterval(fadein);
+            }
+        }, 16);
+
+        return id;
     }
 };

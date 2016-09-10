@@ -8,13 +8,36 @@
 // Inicialização
 Graphics.initialize(); // Graphics.initialize(false);
 AudioManager.initialize();
+TextManager.initialize();
 Game.start();
 
 // Loop principal
+var _maxFrameSkip = 5,
+    _skip = 0,
+    _fullClear = false;
 function mainLoop() {
-    Graphics.clear();
+    var t0 = performance.now();
+
+    if (_skip <= 0)
+        if (_fullClear) {
+            Graphics.fullClear();
+            _fullClear = false;
+        } else
+            Graphics.clear();
+
     Game.update();
-    Graphics.render();
+
+    if (_skip > 0) {
+        _skip--;
+        _fullClear = true;
+    }
+    else {
+        Graphics.render();
+
+        _skip += (performance.now() - t0) * 60 / 1000;
+        _skip = _skip > _maxFrameSkip ? _maxFrameSkip : _skip;
+    }
+
     requestAnimationFrame(mainLoop);
 }
 

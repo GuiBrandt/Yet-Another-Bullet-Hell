@@ -20,7 +20,14 @@ Game.createStage({
     bgm: ["audio/badapple.mp3"],
     
     // Criação dos inimigos
-    initialize: function() {
+    initialize: function(noText) {
+        if (!noText)
+            TextManager.createStageText(
+                Game.currentStageID, 'Yet Another Bullet Hell'
+            );
+        else
+            __checkType(noText, 'boolean', 'text');
+
         var m = Game.createEnemy(Graphics.width / 2, 128, 'static', 40, 'circle1');
 
         this._i1 = setInterval(function() {
@@ -50,7 +57,12 @@ Game.createStage({
     bgm: ["audio/badapple.mp3"],
 
     // Criação dos inimigos
-    initialize: function() {
+    initialize: function(noText) {
+        if (!noText)
+            TextManager.createStageText(Game.currentStageID, 'Shooting Star');
+        else
+            __checkType(noText, 'boolean', 'text');
+
         this._enemies = Game.createEnemies(
             [Graphics.width / 6, 32,     'static', 15, 'arc1'],
             [Graphics.width * 5 / 6, 32, 'static', 15, 'arc2']
@@ -94,7 +106,12 @@ Game.createStage({
     bgm: ["audio/badapple.mp3"],
 
     // Criação dos inimigos
-    initialize: function() {
+    initialize: function(noText) {
+        if (!noText)
+            TextManager.createStageText('BOSS', 'Starry Night');
+        else
+            __checkType(noText, 'boolean', 'text');
+
         var boss = Game.createEnemy(Graphics.width / 3, 96, 'static',  60, 'boss1');
         boss.hitbox.width = boss.hitbox.height = 16;
         boss.color = 0xFFFFFF;
@@ -119,7 +136,7 @@ Game.createStage({
     bgm: ["audio/tetris.mp3"],
 
     // Criação dos inimigos
-    initialize: function() {
+    initialize: function(noText) {
         this._enemies = Game.createEnemies(
             [Graphics.width / 3, 96,     'static', 5, 'circle1'],
             [Graphics.width * 2 / 3, 96, 'static', 5, 'circle1'],
@@ -158,7 +175,7 @@ Game.createStage({
     bgm: ["audio/tetris.mp3"],
     
     // Criação dos inimigos
-    initialize: function() {
+    initialize: function(noText) {
         this._touts = [];
         this._e = Game.createEnemy(Graphics.width / 5, 32, 'rightLeft', 10, 'spiral1');
         this._i1 = setInterval(function() {
