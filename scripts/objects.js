@@ -9,7 +9,7 @@
 //-----------------------------------------------------------------------------
 // Classe da caixa de colisão dos objetos do jogo
 //=============================================================================
-__class('Hitbox', null, {
+var Hitbox = __class(null, {
     //-----------------------------------------------------------------------
     // * Construtor
     //      x   : Coordenada X da hitbox
@@ -144,7 +144,7 @@ __class('Hitbox', null, {
 // Classe básica para os objetos do jogo, relaciona todos os objetos a uma
 // hitbox e a um movimento
 //=============================================================================
-__class('GameObject', null, {
+var GameObject = __class(null, {
     //-----------------------------------------------------------------------
     // * Construtor
     //      x           : Coordenada X do objeto
@@ -230,7 +230,7 @@ __class('GameObject', null, {
 //-----------------------------------------------------------------------------
 // Classe usada para representar uma velocidade vetorial bidimensional
 //=============================================================================
-__class('Velocity', null, {
+var Velocity = __class(null, {
     //-----------------------------------------------------------------------
     // * Construtor
     //      module  : Módulo da velocidade
@@ -301,7 +301,7 @@ __class('Velocity', null, {
 //-----------------------------------------------------------------------------
 // Classe abstrata para objetos ligáveis a um GameObject
 //=============================================================================
-__class('Bindable', null, {
+var Bindable = __class(null, {
     //-----------------------------------------------------------------------
     // * Construtor
     //-----------------------------------------------------------------------
@@ -331,7 +331,7 @@ __class('Bindable', null, {
 // Um objeto de movimento na verdade é só um modelo para criar um objeto que
 // pode mover um GameObject, gerado usando o método bind do Movement
 //=============================================================================
-__class('Movement', 'Bindable', {
+var Movement = __class(Bindable, {
     //-----------------------------------------------------------------------
     // * Construtor
     //      velocities  : Array de velocidades que são aplicadas ao objeto
@@ -392,7 +392,7 @@ __class('Movement', 'Bindable', {
 //-----------------------------------------------------------------------------
 // Classe dos projéteis do jogo
 //=============================================================================
-__class('Projectile', 'GameObject', {
+var Projectile = __class(GameObject, {
     //-----------------------------------------------------------------------
     // * Construtor
     //      x           : Coordenada X
@@ -442,7 +442,7 @@ __class('Projectile', 'GameObject', {
 //-----------------------------------------------------------------------------
 // Classe dos inimigos do jogo
 //=============================================================================
-__class('Enemy', 'GameObject', {
+var Enemy = __class(GameObject, {
     //-----------------------------------------------------------------------
     // * Construtor
     //      x           : Coordenada X
@@ -508,7 +508,7 @@ __class('Enemy', 'GameObject', {
 //-----------------------------------------------------------------------------
 // Classe para os objetos que representam um padrão de ação para inimigos
 //=============================================================================
-__class('GameActions', 'Bindable', {
+var GameActions = __class(Bindable, {
     //-----------------------------------------------------------------------
     // * Construtor
     //      events  : Objeto de eventos das ações
@@ -541,7 +541,7 @@ __class('GameActions', 'Bindable', {
 //-----------------------------------------------------------------------------
 // Classe para o objeto representando o jogador no jogo
 //=============================================================================
-__class('Player', 'GameObject', {
+var Player = __class(GameObject, {
     //-----------------------------------------------------------------------
     // * Construtor
     //      x   : Coordenada X do jogador

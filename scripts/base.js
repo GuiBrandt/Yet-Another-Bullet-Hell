@@ -5,41 +5,37 @@
 //=============================================================================
 "use strict";
 //-----------------------------------------------------------------------------
-// * Cria uma classe
-//      name    : Nome da classe
+// * Cria uma classe e a retorna
 //      _super  : Nome da classe mãe
 //      proto   : Protótipo da classe
 //      props   : Objeto das propriedades (getters e setters) da classe
 //-----------------------------------------------------------------------------
-function __class(name, _super, proto, props) {
-    if (!name || typeof name != 'string')
-        throw new Error('Nome inválido para a classe');
+function __class(_super, proto, props) {
     if (!proto || typeof proto != 'object')
         throw new Error('Protótipo inválido para a classe');
 
-    window[name] = function() {
+    var klass = function() {
         this.initialize.apply(this, arguments);
     };
 
     if (!!_super) {
-        if (typeof _super != 'string')
-            throw new Error("Tipo inválido para `super'");
-        else if (typeof window[_super] != 'function')
-            throw new Error("`" + _super + "' não é uma classe");
+        __checkType(_super, 'function', '_super');
 
-        window[name].prototype = Object.create(window[_super].prototype);
-        window[name].prototype.__super__ = window[_super].prototype;
-        window[name].prototype.constructor = window[name];
+        klass.prototype = Object.create(_super.prototype);
+        klass.prototype.__super__ = _super.prototype;
+        klass.prototype.constructor = klass;
         for (var property in proto)
-            window[name].prototype[property] = proto[property];
+            klass.prototype[property] = proto[property];
     } else
-        window[name].prototype = proto;
+        klass.prototype = proto;
 
     if (!!props) 
         if (typeof props != 'object')
             throw new Error('Propriedades inválidas');
         else
-            Object.defineProperties(window[name].prototype, props);
+            Object.defineProperties(klass.prototype, props);
+
+    return klass;
 }
 //-----------------------------------------------------------------------------
 // * Verifica o tipo de um parâmetro e lança um erro se for inválido
