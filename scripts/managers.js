@@ -304,6 +304,9 @@ var Game = {
     // * Adiciona um objeto aos objetos do jogo
     //-----------------------------------------------------------------------
     add: function(obj) {
+        if (this._pause)
+            return false;
+
         __checkClass(obj, GameObject, 'obj');
         if (this._objects.contains(obj))
             return;
@@ -357,7 +360,20 @@ Object.defineProperties(Game, {
         get: function() {
             return this._player;
         }
+    },
+
+    pause: {
+        get: function() {
+            return this._pause;
+        },
+        set: function(value) {
+            __checkType(value, 'boolean', 'value');
+            this._pause = value;
+        }
     }
+});
+window.addEventListener('blur', function() {
+    Game.pause = true;
 });
 //=============================================================================
 // ** Graphics

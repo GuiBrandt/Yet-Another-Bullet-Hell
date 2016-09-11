@@ -9,14 +9,25 @@
 Graphics.initialize(); // Graphics.initialize(false);
 //Graphics._glDrawMode = gl.LINE_LOOP;
 AudioManager.initialize();
+AudioManager._mute = true;
 TextManager.initialize();
 Game.start();
+
+// FPSMeter
+var fpsmeter = new FPSMeter({
+    theme: 'transparent', 
+    heat: true, 
+    graph: true
+});
 
 // Loop principal
 var _maxFrameSkip = 3,
     _skip = 0,
     _fullClear = false;
+
 function mainLoop() {
+    fpsmeter.tickStart();
+
     var t0 = performance.now();
 
     if (_skip <= 0)
@@ -38,6 +49,8 @@ function mainLoop() {
         _skip += (performance.now() - t0) * 60 / 1000;
         _skip = _skip > _maxFrameSkip ? _maxFrameSkip : _skip;
     }
+
+    fpsmeter.tick();
 
     requestAnimationFrame(mainLoop);
 }
