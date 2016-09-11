@@ -65,7 +65,7 @@ Number.prototype.between = function(a, b) {
     __checkType(a, 'number', 'a');
     __checkType(b, 'number', 'b');
 
-    var max = a > b ? a : b, 
+    var max = a > b ? a : b,
         min = a < b ? a : b; 
     return this >= min && this <= max;
 };

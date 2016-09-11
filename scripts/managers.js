@@ -126,13 +126,17 @@ var Game = {
     // * Atualiza o jogo
     //-----------------------------------------------------------------------
     update: function() {
-        var i = 0, e = false;
-        while (i < this._objects.length && !e) {
-            e = this._objects[i] instanceof Enemy;
-            e = e || this._objects[i] instanceof Projectile && 
-                this._objects[i].shooter instanceof Enemy;
-            i++;
-        }
+        var e = false;
+        
+        if (!this._pause)
+            for (var i = 0; i < this._objects.length; i++) {
+                if (!e) {
+                    e = this._objects[i] instanceof Enemy;
+                    e = e || this._objects[i] instanceof Projectile && 
+                        this._objects[i].shooter instanceof Enemy;
+                }
+                this._objects[i].update();
+            }
 
         if (!e) {
             this.currentStage.terminate();
@@ -146,9 +150,6 @@ var Game = {
             this._pause = true;
         else if (Input.actionPressed())
             this._pause = false;
-
-        if (!this._pause)
-            this.forEachObject(function (obj) { obj.update(); });
     },
     //-----------------------------------------------------------------------
     // * Recomeça o estágio atual
@@ -464,6 +465,16 @@ var Graphics = {
                 this._shaderProgram, 'screenSize'
         );
         gl.uniform2f(screenSizeUniform, this.width, this.height);
+
+        this._sizeUniform = gl.getUniformLocation(
+            this._shaderProgram, 'size'
+        );
+        this._translateUniform = gl.getUniformLocation(
+            this._shaderProgram, 'translate'
+            );
+        this._colorUniform = gl.getUniformLocation(
+            this._shaderProgram, 'color'
+        );
     },
     //-----------------------------------------------------------------------
     // * Inicializa o buffer de vértices para um quadrado
@@ -471,6 +482,7 @@ var Graphics = {
     _initVerticesBuffer: function() {
         this._vBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
+        gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, false, 0, 0);
 
         var vertices = [
              1.0,  1.0,
@@ -510,23 +522,12 @@ var Graphics = {
     //-----------------------------------------------------------------------
     _renderWebGL: function() {
         gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
-        gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, false, 0, 0);
-
-        var sizeUniform = gl.getUniformLocation(
-                this._shaderProgram, 'size'
-            ),
-            translateUniform = gl.getUniformLocation(
-                this._shaderProgram, 'translate'
-            ),
-            colorUniform = gl.getUniformLocation(
-                this._shaderProgram, 'color'
-            );
 
         var lastColor = -1;
         var lastW = 0, lastH = 0;
         Game.forEachObject(function(obj) {
             if (obj._hitbox.width != lastW || obj._hitbox.height != lastH) {
-                gl.uniform2f(sizeUniform, 
+                gl.uniform2f(this._sizeUniform, 
                     obj._hitbox.width,
                     obj._hitbox.height
                 );
@@ -535,7 +536,7 @@ var Graphics = {
             }
 
             if (lastColor != obj.color) {
-                gl.uniform3f(colorUniform,
+                gl.uniform3f(this._colorUniform,
                     ((obj.color >> 16) & 0xFF) / 255.0,
                     ((obj.color >> 8) & 0xFF) / 255.0,
                     (obj.color & 0xFF) / 255.0
@@ -543,7 +544,7 @@ var Graphics = {
                 lastColor = obj.color;
             }
             
-            gl.uniform2f(translateUniform,
+            gl.uniform2f(this._translateUniform,
                 obj._hitbox.x,
                 obj._hitbox.y
             );

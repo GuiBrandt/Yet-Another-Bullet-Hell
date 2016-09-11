@@ -146,6 +146,10 @@ var Hitbox = __class(null, {
 //=============================================================================
 var GameObject = __class(null, {
     //-----------------------------------------------------------------------
+    // * Propriedades
+    //-----------------------------------------------------------------------
+    _color: null,
+    //-----------------------------------------------------------------------
     // * Construtor
     //      x           : Coordenada X do objeto
     //      y           : Coordenada Y do objeto
@@ -157,7 +161,6 @@ var GameObject = __class(null, {
             movement = Game.movement(movement);
         __checkClass(movement, Movement, 'movement');
         this._movement = movement.bind(this);
-        this._color = null;
     },
     //-----------------------------------------------------------------------
     // * Atualização do objeto
@@ -303,6 +306,10 @@ var Velocity = __class(null, {
 //=============================================================================
 var Bindable = __class(null, {
     //-----------------------------------------------------------------------
+    // * Propriedades
+    //-----------------------------------------------------------------------
+    _object: null,
+    //-----------------------------------------------------------------------
     // * Construtor
     //-----------------------------------------------------------------------
     initialize: function() {
@@ -311,9 +318,7 @@ var Bindable = __class(null, {
     //-----------------------------------------------------------------------
     // * Construtor privado (Chame esse nas classes filhas)
     //-----------------------------------------------------------------------
-    _initialize: function() {
-        this._object = null;
-    },
+    _initialize: function() {},
     //-----------------------------------------------------------------------
     // * Liga a um objeto do jogo
     //      object  : Objeto com o qual ligar
@@ -333,6 +338,11 @@ var Bindable = __class(null, {
 //=============================================================================
 var Movement = __class(Bindable, {
     //-----------------------------------------------------------------------
+    // * Propriedades
+    //-----------------------------------------------------------------------
+    _onUpdateSrc: null,
+    _onUpdate: null,
+    //-----------------------------------------------------------------------
     // * Construtor
     //      velocities  : Array de velocidades que são aplicadas ao objeto
     //                    quando o movimento é chamado
@@ -343,8 +353,6 @@ var Movement = __class(Bindable, {
             __checkClass(velocities, Array);
             this._velocities = velocities;
         }
-        this._onUpdateSrc = null;
-        this._onUpdate = null;
     },
     //-----------------------------------------------------------------------
     // * Atualização do movimento
@@ -406,28 +414,6 @@ var Projectile = __class(GameObject, {
         
         this.__super__.initialize.call(this, x, y, movement);
         this._hitbox.width = this._hitbox.height = 6;
-    },
-    //-----------------------------------------------------------------------
-    // * Atualização do objeto
-    //-----------------------------------------------------------------------
-    update: function() {
-        this.__super__.update.call(this);
-
-        Game.forEachObject(function(obj) {
-            if (this._shooter instanceof Enemy) {
-                if (obj instanceof Player &&
-                        this._hitbox.collidesWith(obj.hitbox)) {
-                            this.dispose();
-                            Game.restart();
-                        }
-            } else {
-                if (obj instanceof Enemy &&
-                        this._hitbox.collidesWith(obj.hitbox)) {
-                            obj.applyDamage();
-                            this.dispose();
-                        }
-            }
-        }.bind(this));
     }
 }, {
     //-----------------------------------------------------------------------
@@ -473,6 +459,7 @@ var Enemy = __class(GameObject, {
     //-----------------------------------------------------------------------
     applyDamage: function() {
         this._health--;
+        (this._actions.on('damage') || function(){})();
         this._checkDeath();
     },
     //-----------------------------------------------------------------------
@@ -487,6 +474,15 @@ var Enemy = __class(GameObject, {
     //-----------------------------------------------------------------------
     update: function() {
         this.__super__.update.call(this);
+
+        Game.forEachObject(function(obj) {
+            if (obj instanceof Projectile && obj.shooter instanceof Player &&
+                    obj.hitbox.collidesWith(this._hitbox)) {
+                obj.dispose();
+                this.applyDamage();
+            }
+        }.bind(this));
+
         this._actions.on('update')();
     }
 }, {
@@ -543,13 +539,16 @@ var GameActions = __class(Bindable, {
 //=============================================================================
 var Player = __class(GameObject, {
     //-----------------------------------------------------------------------
+    // * Propriedades
+    //-----------------------------------------------------------------------
+    _fireTimer: 0,
+    //-----------------------------------------------------------------------
     // * Construtor
     //      x   : Coordenada X do jogador
     //      y   : Coordenada Y do jogador
     //-----------------------------------------------------------------------
     initialize: function(x, y) {
         this.__super__.initialize.call(this, x, y, 'player');
-        this._fireTimer = 0;
         this._hitbox.width = this._hitbox.height = 8;
     },
     //-----------------------------------------------------------------------
@@ -557,6 +556,14 @@ var Player = __class(GameObject, {
     //-----------------------------------------------------------------------
     update: function() {
         this.__super__.update.call(this);
+
+        Game.forEachObject(function(obj) {
+            if (obj instanceof Projectile && obj.shooter instanceof Enemy &&
+                    obj.hitbox.collidesWith(this._hitbox)) {
+                obj.dispose();
+                Game.restart();
+            }
+        }.bind(this));
 
         if (this._hitbox.left < 0)
             this._hitbox.left = 0;

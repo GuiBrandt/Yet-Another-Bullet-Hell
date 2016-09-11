@@ -12,7 +12,7 @@ TextManager.initialize();
 Game.start();
 
 // Loop principal
-var _maxFrameSkip = 5,
+var _maxFrameSkip = 3,
     _skip = 0,
     _fullClear = false;
 function mainLoop() {
