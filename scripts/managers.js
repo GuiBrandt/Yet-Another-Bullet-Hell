@@ -127,7 +127,7 @@ var Game = {
     //-----------------------------------------------------------------------
     update: function() {
         var e = false;
-        
+
         if (!this._pause)
             for (var i = 0; i < this._objects.length; i++) {
                 if (!e) {
@@ -404,10 +404,12 @@ var Graphics = {
         try {
             window.gl = this._canvas.getContext('webgl') || 
                             this._canvas.getContext('experimental-webgl');
-            if (!window.gl)
+            if (!gl)
                 throw new Error();
-            window.gl.viewport(0, 0, this._canvas.width, this._canvas.height);
+            gl.viewport(0, 0, this._canvas.width, this._canvas.height);
+            this._glDrawMode = gl.TRIANGLES;
         } catch(e) {
+            alert('Falha ao inicializar WebGL');
             this._useWebGL = false;
             this._initCanvas();
         }
@@ -466,12 +468,6 @@ var Graphics = {
         );
         gl.uniform2f(screenSizeUniform, this.width, this.height);
 
-        this._sizeUniform = gl.getUniformLocation(
-            this._shaderProgram, 'size'
-        );
-        this._translateUniform = gl.getUniformLocation(
-            this._shaderProgram, 'translate'
-            );
         this._colorUniform = gl.getUniformLocation(
             this._shaderProgram, 'color'
         );
@@ -480,18 +476,79 @@ var Graphics = {
     // * Inicializa o buffer de vértices para um quadrado
     //-----------------------------------------------------------------------
     _initVerticesBuffer: function() {
-        this._vBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
-        gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, false, 0, 0);
+        this._vbos = [];
 
-        var vertices = [
+        /*var vertices = [
              1.0,  1.0,
             -1.0,  1.0,
              1.0, -1.0,
             -1.0, -1.0,
-        ];
+        ];*/
+    },
+    //-----------------------------------------------------------------------
+    // * Desenha um grupo de objetos de mesma cor
+    //      color   : Cor do objetos
+    //      objects : Array com os objetos
+    //-----------------------------------------------------------------------
+    _drawObjects: function(color, objects) {
+        if (!this._vbos[color]) {
+            this._vbos[color] = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, this._vbos[color]);
+            gl.vertexAttribPointer(
+                this._vertPosAttr, 
+                2,
+                gl.FLOAT,
+                gl.FALSE,
+                0,
+                0
+            );
+            gl.bufferData(gl.ARRAY_BUFFER, 1024 * 8 * 6, gl.STREAM_DRAW);
+        }
 
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+        gl.uniform3f(this._colorUniform,
+            ((color >> 16) & 0xFF) / 255.0,
+            ((color >> 8) & 0xFF) / 255.0,
+            (color & 0xFF) / 255.0
+        );
+
+        var vertices = new Float32Array(objects.length * 12);
+
+        for (var i = 0; i < objects.length; i++) {
+            var l = objects[i].hitbox.left,  t = objects[i].hitbox.top,
+                r = objects[i].hitbox.right, b = objects[i].hitbox.bottom,
+                o = i * 12;
+
+            vertices[o]     = l; vertices[o+1]  = t;
+            vertices[o+2]   = r; vertices[o+3]  = t;
+            vertices[o+4]   = r; vertices[o+5]  = b;
+
+            vertices[o+6]   = l; vertices[o+7]  = b;
+            vertices[o+8]   = l; vertices[o+9]  = t;
+            vertices[o+10]  = r; vertices[o+11] = b;
+        }
+
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertices);
+        gl.drawArrays(this._glDrawMode, 0, objects.length * 6);
+    },
+    //-----------------------------------------------------------------------
+    // * Desenha tudo na tela com WebGL
+    //-----------------------------------------------------------------------
+    _renderWebGL: function() {
+        var lastColor = -1, objects = [];
+
+        Game.forEachObject(function(obj) {
+            if (lastColor == -1) {
+                lastColor = obj.color;
+            } else if (lastColor != obj.color) {
+                this._drawObjects(lastColor, objects);
+                objects = [];
+                lastColor = obj.color;
+            }
+            
+            objects.push(obj);
+        }.bind(this));
+
+        this._drawObjects(lastColor, objects);
     },
     //-----------------------------------------------------------------------
     // * Limpa a tela toda
@@ -516,41 +573,6 @@ var Graphics = {
                     (obj.hitbox.height + 0.5) | 0
                 );
             }.bind(this));
-    },
-    //-----------------------------------------------------------------------
-    // * Desenha tudo na tela com WebGL
-    //-----------------------------------------------------------------------
-    _renderWebGL: function() {
-        gl.bindBuffer(gl.ARRAY_BUFFER, this._vBuffer);
-
-        var lastColor = -1;
-        var lastW = 0, lastH = 0;
-        Game.forEachObject(function(obj) {
-            if (obj._hitbox.width != lastW || obj._hitbox.height != lastH) {
-                gl.uniform2f(this._sizeUniform, 
-                    obj._hitbox.width,
-                    obj._hitbox.height
-                );
-                lastW = obj._hitbox.width;
-                lastH = obj._hitbox.height;
-            }
-
-            if (lastColor != obj.color) {
-                gl.uniform3f(this._colorUniform,
-                    ((obj.color >> 16) & 0xFF) / 255.0,
-                    ((obj.color >> 8) & 0xFF) / 255.0,
-                    (obj.color & 0xFF) / 255.0
-                );
-                lastColor = obj.color;
-            }
-            
-            gl.uniform2f(this._translateUniform,
-                obj._hitbox.x,
-                obj._hitbox.y
-            );
-            
-            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        }.bind(this));
     },
     //-----------------------------------------------------------------------
     // * Desenha tudo na tela com canvas

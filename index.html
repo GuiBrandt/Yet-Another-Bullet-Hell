@@ -62,15 +62,13 @@
             // * Uniforms
             //-----------------------------------------------------------------------------
             uniform vec2 screenSize;    // Dimensões da tela (em píxels)
-            uniform vec2 size;          // Dimensões do retângulo (em píxels)
-            uniform vec2 translate;     // Translação aplicada ao retângulo
             //-----------------------------------------------------------------------------
             // * Ponto de entrada
             //-----------------------------------------------------------------------------
             void main(void) {
                 gl_Position = vec4(
-                    (vertexPosition.x * size.x + translate.x * 2.0 - screenSize.x) / screenSize.x, 
-                    -(vertexPosition.y * size.y + translate.y * 2.0 - screenSize.y) / screenSize.y, 
+                    (vertexPosition.x * 2.0 - screenSize.x) / screenSize.x,
+                    -(vertexPosition.y * 2.0 - screenSize.y) / screenSize.y,
                     0.0, 
                     1.0
                 );
