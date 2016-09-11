@@ -138,7 +138,7 @@ var Game = {
                 this._objects[i].update();
             }
 
-        if (!e) {
+        if (!this._pause && !e) {
             this.currentStage.terminate();
             this.nextStage();
             this.setupStage();
@@ -477,6 +477,7 @@ var Graphics = {
     //-----------------------------------------------------------------------
     _initVerticesBuffer: function() {
         this._vbos = [];
+        this._vibs = [];
 
         /*var vertices = [
              1.0,  1.0,
@@ -494,15 +495,23 @@ var Graphics = {
         if (!this._vbos[color]) {
             this._vbos[color] = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, this._vbos[color]);
-            gl.vertexAttribPointer(
-                this._vertPosAttr, 
-                2,
-                gl.FLOAT,
-                gl.FALSE,
-                0,
-                0
-            );
-            gl.bufferData(gl.ARRAY_BUFFER, 1024 * 8 * 6, gl.STREAM_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, 1024 * 8 * 8, gl.STREAM_DRAW);
+            gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, gl.FALSE, 0, 0);
+
+            this._vibs[color] = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._vibs[color]);
+            var indices = new Uint16Array(1024 * 6);
+            for (var c = 0; c * 6 < indices.length; c += 1) {
+                var i = c * 6, n = c * 4;
+                indices[i]    = n;
+                indices[i+1]  = n+1;
+                indices[i+2]  = n+3;
+
+                indices[i+3]  = n;
+                indices[i+4]  = n+2; 
+                indices[i+5]  = n+3;
+            }
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
         }
 
         gl.uniform3f(this._colorUniform,
@@ -511,24 +520,21 @@ var Graphics = {
             (color & 0xFF) / 255.0
         );
 
-        var vertices = new Float32Array(objects.length * 12);
+        var vertices = new Float32Array(objects.length * 8);
 
         for (var i = 0; i < objects.length; i++) {
             var l = objects[i].hitbox.left,  t = objects[i].hitbox.top,
                 r = objects[i].hitbox.right, b = objects[i].hitbox.bottom,
-                o = i * 12;
+                o = i * 8;
 
             vertices[o]     = l; vertices[o+1]  = t;
             vertices[o+2]   = r; vertices[o+3]  = t;
-            vertices[o+4]   = r; vertices[o+5]  = b;
-
-            vertices[o+6]   = l; vertices[o+7]  = b;
-            vertices[o+8]   = l; vertices[o+9]  = t;
-            vertices[o+10]  = r; vertices[o+11] = b;
+            vertices[o+4]   = l; vertices[o+5]  = b;
+            vertices[o+6]   = r; vertices[o+7]  = b;
         }
 
         gl.bufferSubData(gl.ARRAY_BUFFER, 0, vertices);
-        gl.drawArrays(this._glDrawMode, 0, objects.length * 6);
+        gl.drawElements(this._glDrawMode, objects.length * 6, gl.UNSIGNED_SHORT, 0);
     },
     //-----------------------------------------------------------------------
     // * Desenha tudo na tela com WebGL
