@@ -74,7 +74,8 @@ var Input = {
     //-----------------------------------------------------------------------
     actionPressed: function() {
         return this._keysDown.contains(this._codes['z']) ||
-                this._keysDown.contains(this._codes['space']);
+                this._keysDown.contains(this._codes['space']) ||
+                TouchInput._action;
     }
 };
 //---------------------------------------------------------------------------
@@ -119,13 +120,13 @@ var TouchInput = {
             var dir = directional[i] = document.createElement('div');
             dir.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
 
-            var w = 12, h = 10;
+            var w = 6, h = 6;
 
             dir.style.position = 'absolute';
-            dir.style.width = w + '%';
-            dir.style.height = h + '%';
-            dir.style.left = w * (i % 3) + '%';
-            dir.style.bottom = h * Math.floor(i / 3) + '%';
+            dir.style.width = w + 'em';
+            dir.style.height = h + 'em';
+            dir.style.right = w * (2 - i % 3) + 'em';
+            dir.style.bottom = h * Math.floor(i / 3) + 'em';
             dir.style.zIndex = 20;
 
             dir.style.border = 'red dashed 2px';
@@ -134,14 +135,42 @@ var TouchInput = {
 
             document.body.appendChild(directional[i]);
 
+            dir.addEventListener('touchend', function() {
+                ev.preventDefault();
+                TouchInput._direction = 0;
+            });
+
             dir.addEventListener('touchstart', function() {
+                ev.preventDefault();
                 TouchInput._direction = this.dir8Code;
                 Game._pause = false;
             }.bind(dir));
         }
 
-        document.body.addEventListener('touchend', function() {
-            TouchInput._direction = 0;
+        var action = document.createElement('div');
+        action.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
+
+        var w = 6, h = 6;
+
+        action.style.position = 'absolute';
+        action.style.width = w + 'em';
+        action.style.height = h + 'em';
+        action.style.left = '0';
+        action.style.bottom = '0';
+        action.style.zIndex = 20;
+
+        action.style.border = 'red dashed 2px';
+        action.addEventListener('touchstart', function() {
+            ev.preventDefault();
+            TouchInput._action = true;
+            Game._pause = false;
+        });
+
+        document.body.appendChild(action);
+
+        action.addEventListener('touchend', function() {
+            ev.preventDefault();
+            TouchInput._action = false;
         });
 
         document.body.addEventListener('touchmove', function(ev) {
