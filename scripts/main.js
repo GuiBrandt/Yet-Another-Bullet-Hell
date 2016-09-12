@@ -7,10 +7,14 @@
 
 // Inicialização
 Graphics.initialize(); // Graphics.initialize(false);
-//Graphics._glDrawMode = gl.LINE_LOOP;
+Graphics._glDrawMode = gl.LINE_LOOP;
 AudioManager.initialize();
+AudioManager._mute = true;
 TextManager.initialize();
 Game.start();
+
+if (isTouchDevice())
+    TouchInput.initialize();
 
 // FPSMeter
 var fpsmeter = new FPSMeter({
@@ -20,7 +24,7 @@ var fpsmeter = new FPSMeter({
 });
 
 // Loop principal
-var _maxFrameSkip = 3,
+var _maxFrameSkip = 0,
     _skip = 0,
     _fullClear = false;
 
@@ -41,8 +45,7 @@ function mainLoop() {
     if (_skip > 0) {
         _skip--;
         _fullClear = true;
-    }
-    else {
+    } else {
         Graphics.render();
 
         _skip += (performance.now() - t0) * 60 / 1000;

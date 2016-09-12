@@ -109,3 +109,9 @@ Array.prototype.contains = function(obj) {
 Array.prototype.remove = function(obj) {
     this.splice(this.indexOf(obj), 1);
 };
+//-----------------------------------------------------------------------------
+// * Verifica se o jogo está rodando em um dispositivo touch
+//-----------------------------------------------------------------------------
+window.isTouchDevice = function() {
+  return 'ontouchstart' in window;
+};

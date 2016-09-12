@@ -61,7 +61,7 @@ var Input = {
         else if (down)
             return 2;
 
-        return 0;
+        return TouchInput._direction;
     },
     //-----------------------------------------------------------------------
     // * Verifica se Shift está pressionado
@@ -97,6 +97,70 @@ window.addEventListener('blur', function() {
     Input._keysDown = [];
 });
 //=============================================================================
+// ** TouchInput
+//-----------------------------------------------------------------------------
+// Controla a entrada por toque de comandos do jogo
+//=============================================================================
+var TouchInput = {
+    //-----------------------------------------------------------------------
+    // * Propriedades privadas
+    //-----------------------------------------------------------------------
+    _action: false,
+    _direction: 0,
+    //-----------------------------------------------------------------------
+    // * Cria os controles por toque na tela
+    //-----------------------------------------------------------------------
+    initialize: function() {
+        var directional = new Array(9);
+        for (var i = 0; i < 9; i++) {
+            if (i == 4)
+                continue;
+
+            var dir = directional[i] = document.createElement('div');
+            dir.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
+
+            var w = 12, h = 10;
+
+            dir.style.position = 'absolute';
+            dir.style.width = w + '%';
+            dir.style.height = h + '%';
+            dir.style.left = w * (i % 3) + '%';
+            dir.style.bottom = h * Math.floor(i / 3) + '%';
+            dir.style.zIndex = 20;
+
+            dir.style.border = 'red dashed 2px';
+
+            dir.dir8Code = i + 1;
+
+            document.body.appendChild(directional[i]);
+
+            dir.addEventListener('touchstart', function() {
+                TouchInput._direction = this.dir8Code;
+                Game._pause = false;
+            }.bind(dir));
+        }
+
+        document.body.addEventListener('touchend', function() {
+            TouchInput._direction = 0;
+        });
+
+        document.body.addEventListener('touchmove', function(ev) {
+            ev.preventDefault();
+
+            TouchInput._direction = 0;
+
+            for (var i = 0; i < ev.changedTouches.length; i++) {
+                var x = ev.changedTouches[i].pageX, 
+                    y = ev.changedTouches[i].pageY;
+
+                var touched = document.elementFromPoint(x, y);
+                if (!!touched && !!touched.dir8Code)
+                    TouchInput._direction = touched.dir8Code;
+            }
+        });
+    }
+}
+//=============================================================================
 // ** Game
 //-----------------------------------------------------------------------------
 // Controla os objetos do jogo, todos os GameObjects devem ser criados por 
@@ -105,7 +169,7 @@ window.addEventListener('blur', function() {
 //=============================================================================
 var Game = {
     //-----------------------------------------------------------------------
-    // Propriedades privadas
+    // * Propriedades privadas
     //-----------------------------------------------------------------------
     _player: null,
     _objects: [],
