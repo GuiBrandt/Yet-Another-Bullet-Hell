@@ -109,7 +109,8 @@ var TouchInput = {
     _action: false,
     _analogOrigin: null,
     _analog: null,
-    _touchId: 0,
+    _actionTouchId: -1,
+    _touchId: -1,
     _ox: -1,
     _oy: -1,
     _x: 0,
@@ -122,33 +123,46 @@ var TouchInput = {
         this._actionButton = document.createElement('div');
         var s = this._actionButton.style;
         s.backgroundColor = "rgba(255, 255, 255, 0.5)";
-        var sz = "3em";
+        var sz = "6em";
         s.height = s.width = sz;
         s.borderRadius = sz;
 
         s.position = 'fixed';
-        s.left = '2em';
-        s.bottom = '2em';
+        s.right = '3em';
+        s.bottom = '3em';
         s.zIndex = 20;
         document.body.appendChild(this._actionButton);
 
         // Evento de toque na tela
         function onTouchStart(event) {
+            event.preventDefault();
+
             Game.pause = false;
 
             var x, y;
             for (var i = 0; i < event.changedTouches.length; i++) {
                 x = event.changedTouches[i].pageX;
                 y = event.changedTouches[i].pageY;
+
+                if (document.elementFromPoint(x, y) == this._actionButton) {
+                    this._action = true;
+                    this._actionTouchId = event.changedTouches[i].identifier;
+                    x = y = null;
+                    continue;
+                }
+
                 this._touchId = event.changedTouches[i].identifier;
             }
+
+            if (x == null || y == null)
+                return;
 
             // Origem
             this._analogOrigin = this._analogOrigin || 
                 document.createElement('div');
             var s = this._analogOrigin.style;
             s.backgroundColor = "rgba(200, 200, 200, 0.5)";
-            var sz = "5em";
+            var sz = "7em";
             s.height = s.width = sz;
             s.borderRadius = sz;
             
@@ -163,7 +177,7 @@ var TouchInput = {
             this._analog = this._analog || document.createElement('div');
             s = this._analog.style;
             s.backgroundColor = "rgba(255, 255, 255, 0.5)";
-            var sz = "4.5em";
+            var sz = "6.5em";
             s.height = s.width = sz;
             s.borderRadius = sz;
 
@@ -185,6 +199,8 @@ var TouchInput = {
 
         // Evento de movimento do dedo na tela
         function onTouchMove(event) {
+            event.preventDefault();
+
             var x = -1, 
                 y = -1;
             for (var i = 0; i < event.changedTouches.length; i++) {
@@ -204,10 +220,22 @@ var TouchInput = {
 
         // Evento de tirar o dedo da tela
         function onTouchEnd(event) {
-            document.body.removeChild(this._analogOrigin);
-            document.body.removeChild(this._analog);
-            this._ox = -1;
-            this._oy = -1;
+            event.preventDefault();
+
+            for (var i = 0; i < event.changedTouches.length; i++) {
+                var id = event.changedTouches[i].identifier;
+                console.log(id);
+
+                if (id == this._actionTouchId) {
+                    this._action = false;
+                    this._actionTouchId = -1;
+                } else if (id == this._touchId) {
+                    document.body.removeChild(this._analogOrigin);
+                    document.body.removeChild(this._analog);
+                    this._ox = -1;
+                    this._oy = -1;
+                }
+            }
         }
 
         // Liga os eventos
@@ -221,8 +249,6 @@ var TouchInput = {
     getAngle: function() {
         if (this._ox < 0 || this._oy < 0) return 0;
         var dx = this._x - this._ox, dy = this._y - this._oy;
-        if (Math.abs(dx) < 16 && Math.abs(dy) < 16)
-            return 0;
         return Math.atan2(dy, dx);
     },
     //-----------------------------------------------------------------------
@@ -231,9 +257,8 @@ var TouchInput = {
     //-----------------------------------------------------------------------
     getModule: function(max) {
         if (this._ox < 0 || this._oy < 0) return 0;
-        var dx = this._x - this._ox, dy = this._y - this._oy,
-            m = Math.sqrt(dx*dx, dy*dy) / 16;
-        return m > max ? max : m;
+        var dx = this._x - this._ox, dy = this._y - this._oy;
+        return max;
     }
 }
 //=============================================================================

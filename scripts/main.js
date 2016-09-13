@@ -7,7 +7,7 @@
 
 // Inicialização
 Graphics.initialize(); // Graphics.initialize(false);
-Graphics._glDrawMode = gl.LINE_LOOP;
+//Graphics._glDrawMode = gl.LINE_LOOP;
 AudioManager.initialize();
 AudioManager._mute = true;
 TextManager.initialize();

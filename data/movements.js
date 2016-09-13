@@ -162,9 +162,8 @@ Game.createMovement('targetPlayer', [
 //=============================================================================
 Game.createMovement('player', [new Velocity(0, 0)],
     function() {
-        var min = 1.25, max = 3;
         if (!isTouchDevice()) {
-            this._velocities[0].module = Input.shiftPressed() ? min : max;
+            this._velocities[0].module = Input.shiftPressed() ? 1.25 : 3;
             var t = ([
                 0,
                 Math.PI * 3 / 4,    Math.PI / 2,        Math.PI / 4,
@@ -175,7 +174,7 @@ Game.createMovement('player', [new Velocity(0, 0)],
                 this._velocities[0].module = 0;
             this._velocities[0].angle = t;
         } else {
-            this._velocities[0].module = TouchInput.getModule(max);
+            this._velocities[0].module = TouchInput.getModule(2);
             this._velocities[0].angle = TouchInput.getAngle();
         }
     }
