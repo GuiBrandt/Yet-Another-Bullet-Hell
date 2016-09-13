@@ -309,7 +309,7 @@ var Game = {
             this.setupStage();
         }
 
-        if (Input._keysDown.contains(17))
+        if (Input._keysDown.contains(17) && !this._pause)
             return this.restart();
         if (Input._keysDown.contains(27) || Input._keysDown.contains(226))
             this._pause = true;
