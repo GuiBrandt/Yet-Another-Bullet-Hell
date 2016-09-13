@@ -61,7 +61,7 @@ var Input = {
         else if (down)
             return 2;
 
-        return TouchInput._direction;
+        return 0;
     },
     //-----------------------------------------------------------------------
     // * Verifica se Shift está pressionado
@@ -107,86 +107,133 @@ var TouchInput = {
     // * Propriedades privadas
     //-----------------------------------------------------------------------
     _action: false,
-    _direction: 0,
+    _analogOrigin: null,
+    _analog: null,
+    _touchId: 0,
+    _ox: -1,
+    _oy: -1,
+    _x: 0,
+    _y: 0,
     //-----------------------------------------------------------------------
     // * Cria os controles por toque na tela
     //-----------------------------------------------------------------------
     initialize: function() {
-        var directional = new Array(9);
-        for (var i = 0; i < 9; i++) {
-            if (i == 4)
-                continue;
 
-            var dir = directional[i] = document.createElement('div');
-            dir.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
+        this._actionButton = document.createElement('div');
+        var s = this._actionButton.style;
+        s.backgroundColor = "rgba(255, 255, 255, 0.5)";
+        var sz = "3em";
+        s.height = s.width = sz;
+        s.borderRadius = sz;
 
-            var w = 6, h = 6;
+        s.position = 'fixed';
+        s.left = '2em';
+        s.bottom = '2em';
+        s.zIndex = 20;
+        document.body.appendChild(this._actionButton);
 
-            dir.style.position = 'absolute';
-            dir.style.width = w + 'em';
-            dir.style.height = h + 'em';
-            dir.style.right = w * (2 - i % 3) + 'em';
-            dir.style.bottom = h * Math.floor(i / 3) + 'em';
-            dir.style.zIndex = 20;
+        // Evento de toque na tela
+        function onTouchStart(event) {
+            Game.pause = false;
 
-            dir.style.border = 'red dashed 2px';
+            var x, y;
+            for (var i = 0; i < event.changedTouches.length; i++) {
+                x = event.changedTouches[i].pageX;
+                y = event.changedTouches[i].pageY;
+                this._touchId = event.changedTouches[i].identifier;
+            }
 
-            dir.dir8Code = i + 1;
+            // Origem
+            this._analogOrigin = this._analogOrigin || 
+                document.createElement('div');
+            var s = this._analogOrigin.style;
+            s.backgroundColor = "rgba(200, 200, 200, 0.5)";
+            var sz = "5em";
+            s.height = s.width = sz;
+            s.borderRadius = sz;
+            
+            s.position = 'fixed';
+            s.left = x + 'px';
+            s.top = y + 'px';
+            s.zIndex = 20;
 
-            document.body.appendChild(directional[i]);
+            s.transform = 'translateX(-50%) translateY(-50%)';
 
-            dir.addEventListener('touchend', function() {
-                ev.preventDefault();
-                TouchInput._direction = 0;
-            });
+            // Controle
+            this._analog = this._analog || document.createElement('div');
+            s = this._analog.style;
+            s.backgroundColor = "rgba(255, 255, 255, 0.5)";
+            var sz = "4.5em";
+            s.height = s.width = sz;
+            s.borderRadius = sz;
 
-            dir.addEventListener('touchstart', function() {
-                ev.preventDefault();
-                TouchInput._direction = this.dir8Code;
-                Game._pause = false;
-            }.bind(dir));
+            s.position = 'fixed';
+            s.left = x + 'px';
+            s.top = y + 'px';
+            s.zIndex = 20;
+
+            s.transform = 'translateX(-50%) translateY(-50%)';
+
+            this._ox = x;
+            this._oy = y;
+            this._x = x;
+            this._y = y;
+
+            document.body.appendChild(this._analogOrigin);
+            document.body.appendChild(this._analog);
         }
 
-        var action = document.createElement('div');
-        action.style.backgroundColor = 'rgba(255, 0, 0, 0.5)';
-
-        var w = 6, h = 6;
-
-        action.style.position = 'absolute';
-        action.style.width = w + 'em';
-        action.style.height = h + 'em';
-        action.style.left = '0';
-        action.style.bottom = '0';
-        action.style.zIndex = 20;
-
-        action.style.border = 'red dashed 2px';
-        action.addEventListener('touchstart', function() {
-            ev.preventDefault();
-            TouchInput._action = true;
-            Game._pause = false;
-        });
-
-        document.body.appendChild(action);
-
-        action.addEventListener('touchend', function() {
-            ev.preventDefault();
-            TouchInput._action = false;
-        });
-
-        document.body.addEventListener('touchmove', function(ev) {
-            ev.preventDefault();
-
-            TouchInput._direction = 0;
-
-            for (var i = 0; i < ev.changedTouches.length; i++) {
-                var x = ev.changedTouches[i].pageX, 
-                    y = ev.changedTouches[i].pageY;
-
-                var touched = document.elementFromPoint(x, y);
-                if (!!touched && !!touched.dir8Code)
-                    TouchInput._direction = touched.dir8Code;
+        // Evento de movimento do dedo na tela
+        function onTouchMove(event) {
+            var x = -1, 
+                y = -1;
+            for (var i = 0; i < event.changedTouches.length; i++) {
+                if (this._touchId != event.changedTouches[i].identifier) 
+                    continue;
+                x = event.changedTouches[i].pageX;
+                y = event.changedTouches[i].pageY;
             }
-        });
+
+            if (x < 0 || y < 0 || !this._analog)
+                return;
+            this._x = x;
+            this._y = y;
+            this._analog.style.left = x + 'px';
+            this._analog.style.top = y + 'px';
+        }
+
+        // Evento de tirar o dedo da tela
+        function onTouchEnd(event) {
+            document.body.removeChild(this._analogOrigin);
+            document.body.removeChild(this._analog);
+            this._ox = -1;
+            this._oy = -1;
+        }
+
+        // Liga os eventos
+        window.addEventListener('touchstart',   onTouchStart.bind(this));
+        window.addEventListener('touchmove',    onTouchMove.bind(this));
+        window.addEventListener('touchend',     onTouchEnd.bind(this));
+    },
+    //-----------------------------------------------------------------------
+    // * Obtém o ângulo do movimento de acordo com o analógico
+    //-----------------------------------------------------------------------
+    getAngle: function() {
+        if (this._ox < 0 || this._oy < 0) return 0;
+        var dx = this._x - this._ox, dy = this._y - this._oy;
+        if (Math.abs(dx) < 16 && Math.abs(dy) < 16)
+            return 0;
+        return Math.atan2(dy, dx);
+    },
+    //-----------------------------------------------------------------------
+    // * Obtém o módulo do movimento de acordo com o analógico
+    //      max : Velocidade máxima
+    //-----------------------------------------------------------------------
+    getModule: function(max) {
+        if (this._ox < 0 || this._oy < 0) return 0;
+        var dx = this._x - this._ox, dy = this._y - this._oy,
+            m = Math.sqrt(dx*dx, dy*dy) / 16;
+        return m > max ? max : m;
     }
 }
 //=============================================================================
@@ -587,13 +634,6 @@ var Graphics = {
     _initVerticesBuffer: function() {
         this._vbos = [];
         this._vibs = [];
-
-        /*var vertices = [
-             1.0,  1.0,
-            -1.0,  1.0,
-             1.0, -1.0,
-            -1.0, -1.0,
-        ];*/
     },
     //-----------------------------------------------------------------------
     // * Desenha um grupo de objetos de mesma cor
@@ -604,12 +644,12 @@ var Graphics = {
         if (!this._vbos[color]) {
             this._vbos[color] = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, this._vbos[color]);
-            gl.bufferData(gl.ARRAY_BUFFER, 1024 * 8 * 8, gl.STREAM_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, 512 * 8 * 8, gl.STREAM_DRAW);
             gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, gl.FALSE, 0, 0);
 
             this._vibs[color] = gl.createBuffer();
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._vibs[color]);
-            var indices = new Uint16Array(1024 * 6);
+            var indices = new Uint16Array(512 * 6);
             for (var c = 0; c * 6 < indices.length; c += 1) {
                 var i = c * 6, n = c * 4;
                 indices[i]    = n;
