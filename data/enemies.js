@@ -334,9 +334,9 @@ Game.createActionPattern('arc2', {
     death: explode
 });
 //=============================================================================
-// ** boss1
+// ** boss2
 //-----------------------------------------------------------------------------
-// Padrão de ação do primeiro boss. É muito complicado pra descrever nesse
+// Padrão de ação do segundo boss. É muito complicado pra descrever nesse
 // cabeçalho, então só olhe o código e deduza
 //=============================================================================
 Game.createActionPattern('boss1', {
