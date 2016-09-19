@@ -244,6 +244,8 @@ var Velocity = __class(null, {
         __checkType(module, 'number', 'module');
         __checkType(angle,  'number', 'module');
 
+        this._module = module;
+        this._angle = angle;
         this._x = module * Math.cos(angle);
         this._y = module * Math.sin(angle);
     },
@@ -282,7 +284,7 @@ var Velocity = __class(null, {
     // * Módulo da velocidade
     //-----------------------------------------------------------------------
     module: {
-        get: function() { return this._x / Math.cos(this.angle); },
+        get: function() { return this._module; },
         set: function(value) {
             __checkType(value, 'number', 'value');
             this.initialize(value, this.angle);
@@ -292,7 +294,7 @@ var Velocity = __class(null, {
     // * Ângulo da velocidade
     //-----------------------------------------------------------------------
     angle: {
-        get: function() { return Math.atan2(this._y, this._x) || 0.0; },
+        get: function() { return this._angle; },
         set: function(value) {
             __checkType(value, 'number', 'value');
             this.initialize(this.module, value);
@@ -392,6 +394,57 @@ var Movement = __class(Bindable, {
             __checkType(value, 'function', 'value');
             this._onUpdateSrc = value;
             this._onUpdate = value.bind(this);
+        }
+    }
+});
+//=============================================================================
+// ** LinearMovement
+//-----------------------------------------------------------------------------
+// Classe para os movimentos lineares, diminui o processamento e aumenta a 
+// precisão para movimentos em linha reta
+//=============================================================================
+var LinearMovement = __class(Movement, {
+    //-----------------------------------------------------------------------
+    // * Atualização do movimento
+    //   Deve ser chamada a cada frame
+    //-----------------------------------------------------------------------
+    update: function() {
+        if (!this._object)
+            throw new Error('Não é possível atualizar o movimento antes ' + 
+                'de ligá-lo a um objeto');
+        this._clock++;
+    },
+    //-----------------------------------------------------------------------
+    // * Liga a um objeto do jogo
+    //      object  : Objeto com o qual ligar
+    //-----------------------------------------------------------------------
+    bind: function(object) {
+        var bound = Bindable.prototype.bind.call(this, object);
+        bound._clock = 0;
+        bound._x0 = object.hitbox.x;
+        bound._y0 = object.hitbox.y;
+        return bound;
+    },
+    //-----------------------------------------------------------------------
+    // * Aplica o movimento o objeto ao qual ele está ligado
+    //-----------------------------------------------------------------------
+    apply: function() {
+        var x = 0, y = 0;
+        for (var i = 0; i < this._velocities.length; i++) {
+            x += this._velocities[i].x * this._clock;
+            y += this._velocities[i].y * this._clock;
+        }
+        this._object.hitbox.x = this._x0 + x;
+        this._object.hitbox.y = this._y0 + y;
+    }
+}, {
+    //-----------------------------------------------------------------------
+    // * Função chamada durante a atualização do movimento
+    //-----------------------------------------------------------------------
+    onUpdate: {
+        get: function() { return null; },
+        set: function(value) {
+            throw new Error("`LinearMovement' não pode ter seu `onUpdate' alterado");
         }
     }
 });
@@ -558,7 +611,7 @@ var Player = __class(GameObject, {
         this.__super__.update.call(this);
 
         Game.forEachObject(function(obj) {
-            if (obj instanceof Projectile && obj.shooter instanceof Enemy &&
+            if (((obj instanceof Projectile && obj.shooter instanceof Enemy) || obj instanceof Enemy) &&
                     obj.hitbox.collidesWith(this._hitbox)) {
                 obj.dispose();
                 Game.restart();

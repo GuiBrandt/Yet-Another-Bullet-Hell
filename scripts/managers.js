@@ -224,7 +224,6 @@ var TouchInput = {
 
             for (var i = 0; i < event.changedTouches.length; i++) {
                 var id = event.changedTouches[i].identifier;
-                console.log(id);
 
                 if (id == this._actionTouchId) {
                     this._action = false;
@@ -274,6 +273,7 @@ var Game = {
     //-----------------------------------------------------------------------
     _player: null,
     _objects: [],
+    _newObjects: [],
     _stages: [],
     _movements: {},
     _actionPatterns: {},
@@ -284,6 +284,7 @@ var Game = {
     // * Começa o jogo
     //-----------------------------------------------------------------------
     start: function() {
+        this._clock = 0;
         this.createPlayer();
         this.setupStage();
     },
@@ -291,6 +292,8 @@ var Game = {
     // * Atualiza o jogo
     //-----------------------------------------------------------------------
     update: function() {
+        this._updating = true;
+
         var e = false;
 
         if (!this._pause)
@@ -300,7 +303,8 @@ var Game = {
                     e = e || this._objects[i] instanceof Projectile && 
                         this._objects[i].shooter instanceof Enemy;
                 }
-                this._objects[i].update();
+                if (this._objects[i])
+                    this._objects[i].update();
             }
 
         if (!this._pause && !e) {
@@ -315,6 +319,17 @@ var Game = {
             this._pause = true;
         else if (Input.actionPressed())
             this._pause = false;
+
+        this._clock++;
+
+        for (var i = 0; i < this._newObjects.length; i++)
+            this.__add(this._newObjects[i]);
+        this._newObjects = [];
+
+        while (this._objects.contains(null))
+            this._objects.remove(null);
+
+        this._updating = false;
     },
     //-----------------------------------------------------------------------
     // * Recomeça o estágio atual
@@ -388,6 +403,20 @@ var Game = {
             if (!!updateCallback)
                 this._movements[name].onUpdate = updateCallback;
         }
+        return this._movements[name];
+    },
+    //-----------------------------------------------------------------------
+    // * Cria um padrão de movimento linear
+    //      name            : Nome do movimento
+    //      velocities      : Velocidades do movimento
+    //-----------------------------------------------------------------------
+    createLinearMovement: function(name, velocities) {
+        __checkType(name, 'string', 'name');
+        __checkClass(velocities, Array, 'velocities');
+        if (!this._movements[name]) {
+            this._movements[name] = new LinearMovement(velocities);
+        }
+        __checkClass(this._movements[name], LinearMovement, "Game.movement('" + name + "')");
         return this._movements[name];
     },
     //-----------------------------------------------------------------------
@@ -466,11 +495,23 @@ var Game = {
         return this._actionPatterns[name];
     },
     //-----------------------------------------------------------------------
-    // * Adiciona um objeto aos objetos do jogo
+    // * Adiciona um objeto para a lista de inclusão nos objetos do jogo
     //-----------------------------------------------------------------------
     add: function(obj) {
         if (this._pause)
             return false;
+
+        if (!this._updating)
+            this.__add(obj);
+        else {
+            __checkClass(obj, GameObject, 'obj');
+            this._newObjects.push(obj);
+        }
+    },
+    //-----------------------------------------------------------------------
+    // * Adiciona efetivamente um objeto aos objetos do jogo
+    //-----------------------------------------------------------------------
+    __add: function(obj) {
 
         __checkClass(obj, GameObject, 'obj');
         if (this._objects.contains(obj))
@@ -482,12 +523,12 @@ var Game = {
         while (beg <= end) {
             i = Math.floor((beg + end) / 2);
             if (this._objects[i] == obj) return;
-            if (this._objects[i].color == obj.color)
-                break;
-            if (this._objects[i].color > obj.color)
-                end = i - 1;
-            else if (this._objects[i].color < obj.color)
+            if (this._objects[i] == null || this._objects[i].color < obj.color)
                 beg = i + 1;
+            else if (this._objects[i].color == obj.color)
+                break;
+            else if (this._objects[i].color > obj.color)
+                end = i - 1;                
         }
 
         this._objects.splice(i, 0, obj);
@@ -497,15 +538,21 @@ var Game = {
     //-----------------------------------------------------------------------
     remove: function(obj) {
         __checkClass(obj, GameObject, 'obj');
-        this._objects.remove(obj);
+        if (this._updating)
+            this._objects[this._objects.indexOf(obj)] = null;
+        else
+            this._objects.remove(obj);
     },
     //-----------------------------------------------------------------------
     // * Executa uma função para cada objeto do jogo
     //      callback    : Função a ser chamada
     //-----------------------------------------------------------------------
     forEachObject: function(callback) {
-        for (var i = 0; i < this._objects.length; i++)
+        for (var i = 0; i < this._objects.length; i++) {
+            if (this._objects[i] == null)
+                continue;
             callback.call(null, this._objects[i]);
+        }
     }
 };
 Object.defineProperties(Game, {
@@ -518,6 +565,12 @@ Object.defineProperties(Game, {
     currentStageID: {
         get: function() {
             return this._stageID + 1;
+        }
+    },
+
+    clock: {
+        get: function() {
+            return this._clock;
         }
     },
 
@@ -956,6 +1009,7 @@ var TextManager = {
         var id = this.createText('' + n + ' - ' + name, '50%', '50%', {
             transform: 'translateX(-50%)',
             fontSize: '22pt',
+            textShadow: '0px 0px 2px #000',
             webkitTouchCallout: 'none',
             webkitUserSelect: 'none',
             mozUserSelect: 'none',
@@ -982,5 +1036,58 @@ var TextManager = {
         }, 16);
 
         return id;
+    }
+};
+//=============================================================================
+// ** FPSManager
+//-----------------------------------------------------------------------------
+// Controla o framerate do jogo
+//=============================================================================
+var FPSManager = {
+    //-----------------------------------------------------------------------
+    // * Propriedades privadas
+    //-----------------------------------------------------------------------
+    _frameSkip: 0,
+    _maxFrameSkip: 3,
+    _fpsMeter: null,
+    //-----------------------------------------------------------------------
+    // * Inicializa o controlador de FPS
+    //      showMeter   : Boolean indicando quando mostrar ou não o medidor
+    //                    de FPS
+    //-----------------------------------------------------------------------
+    initialize: function(showMeter) {
+        if (showMeter !== null && showMeter !== undefined)
+            __checkType(showMeter, 'boolean', 'showMeter');
+        this._fpsMeter = new FPSMeter({
+            theme: 'transparent', 
+            heat: true, 
+            graph: true
+        });
+        if (!showMeter)
+            this._fpsMeter.hide();
+    },
+    //-----------------------------------------------------------------------
+    // * Mede o tempo de um processo e determina quando pular frames
+    //   na próxima iteração
+    //      callback    : Função para a qual medir a performance
+    //-----------------------------------------------------------------------
+    measure: function(callback) {
+        __checkType(callback, 'function', 'callback');
+        var t0 = performance.now();
+        callback.call();
+        this._fpsMeter.tick();
+        this._frameSkip += (t0 - performance.now()) / 16;
+    },
+    //-----------------------------------------------------------------------
+    // * Verifica se é necessário pular um frame
+    //-----------------------------------------------------------------------
+    needsSkip: function() {
+        return Math.floor(this._frameSkip % this._maxFrameSkip) > 0;
+    },
+    //-----------------------------------------------------------------------
+    // * Função chamada quando um frame é pulado
+    //-----------------------------------------------------------------------
+    skipped: function() {
+        this._frameSkip--;
     }
 };

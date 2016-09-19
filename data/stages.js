@@ -137,6 +137,11 @@ Game.createStage({
 
     // Criação dos inimigos
     initialize: function(noText) {
+        if (!noText)
+            TextManager.createStageText(Game.currentStageID, 'Holy Trinity');
+        else
+            __checkType(noText, 'boolean', 'text');
+
         this._enemies = Game.createEnemies(
             [Graphics.width / 3, 96,     'static', 5, 'circle1'],
             [Graphics.width * 2 / 3, 96, 'static', 5, 'circle1'],
@@ -176,6 +181,11 @@ Game.createStage({
     
     // Criação dos inimigos
     initialize: function(noText) {
+        if (!noText)
+            TextManager.createStageText(Game.currentStageID, 'Spirals');
+        else
+            __checkType(noText, 'boolean', 'text');
+
         this._touts = [];
         this._e = Game.createEnemy(Graphics.width / 5, 32, 'rightLeft', 10, 'spiral1');
         this._i1 = setInterval(function() {
@@ -193,5 +203,97 @@ Game.createStage({
         clearInterval(this._i1);
         for (var i = 0; i < this._touts.length; i++)
             clearTimeout(this._touts[i]);
+    }
+});
+//-----------------------------------------------------------------------------
+// Boss
+//-----------------------------------------------------------------------------
+Game.createStage({
+    // Cores legais
+    backgroundColor:        0xFFFFFF,
+    playerColor:            0x00AAFF,
+    enemyColor:             0x000000,
+    playerProjectileColor:  0x00FF00,
+    enemyProjectileColor:   0xFF0000,
+    
+    // Música
+    bgm: ["audio/tetris.mp3"],
+
+    // Criação dos inimigos
+    initialize: function(noText) {
+        if (!noText)
+            TextManager.createStageText('BOSS', 'Blood Flow');
+        else
+            __checkType(noText, 'boolean', 'text');
+
+        this._boss = Game.createEnemy(Graphics.width / 6, Graphics.height / 3, 'rightLeft', 30, 'boss2');
+        this._boss.hitbox.width = this._boss.hitbox.height = 32;
+
+        this._colors = [
+            0xFF0000, 0x00FF00, 0x0000FF, 
+            0xFFFF00, 0x00FFFF, 0xFF7700, 
+            0x7700FF
+        ];
+
+        this._tetrisInterval = null;
+    },
+
+    startTetris: function() {
+        if (this._tetrisInterval)
+            this.endTetris();
+        var tetris = function() {
+            if (this._boss.health <= 0) return;
+
+            var r = Math.random(),
+                c = this._colors[Math.floor(r * this._colors.length)],
+                x = Math.floor(Math.random() * Graphics.width) / 12;
+
+            var t = function(x, y) {
+                var e = new Enemy(x*12, y*12, 'straightDown', 12, 'noexplode');
+                e.color = c;
+                e.hitbox.width = e.hitbox.height = 12;
+                Game.add(e);
+            }
+
+            switch (Math.floor(r * 7)) {
+                case 0:
+                    t(x-2, 0); t(x-1, 0); t(x, 0); t(x+1, 0);
+                    break;
+                case 1:
+                    t(x-1, 0);
+                    t(x-1, 1); t(x, 1); t(x+1, 1);
+                    break;
+                case 2:
+                                        t(x+1, 0);
+                    t(x-1, 1); t(x, 1); t(x+1, 1);
+                    break;
+                case 3:
+                    t(x-1, 0); t(x, 0); 
+                    t(x-1, 1); t(x, 1);
+                    break;
+                case 4:
+                               t(x, 0); t(x+1, 0); 
+                    t(x-1, 1); t(x, 1);
+                    break;
+                case 5:
+                               t(x, 0);
+                    t(x-1, 1); t(x, 1); t(x+1, 1);
+                    break;
+                case 6:
+                    t(x-1, 0); t(x, 0); 
+                               t(x, 1); t(x+1, 1);
+            }
+        }.bind(this);
+        this._tetrisInterval = setInterval(tetris, 75);
+    },
+
+    endTetris: function() {
+        clearInterval(this._tetrisInterval);
+        this._tetrisInterval = null;
+    },
+
+    // Finalização do estágio
+    terminate: function() {
+        this.endTetris();
     }
 });

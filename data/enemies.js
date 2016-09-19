@@ -36,6 +36,27 @@ Game.createActionPattern('still', {
     death: explode
 });
 //=============================================================================
+// ** noexplode
+//-----------------------------------------------------------------------------
+// Não faz nada, nem mesmo explode em vários projéteis quando morre
+//=============================================================================
+Game.createActionPattern('noexplode', {
+    //-----------------------------------------------------------------------
+    // * Inicialização
+    //-----------------------------------------------------------------------
+    initialize: function() {},
+    //-----------------------------------------------------------------------
+    // * Atualização
+    //-----------------------------------------------------------------------
+    update: function() {},
+    //-----------------------------------------------------------------------
+    // * Efeito de morte
+    //-----------------------------------------------------------------------
+    death: function() {
+        this.dispose();
+    }
+});
+//=============================================================================
 // ** straightUp
 //-----------------------------------------------------------------------------
 // Atira para cima
@@ -441,5 +462,111 @@ Game.createActionPattern('boss1', {
             this.dispose();
         else
             this._health = this._maxHealth;
+    }
+});
+//=============================================================================
+// ** boss1
+//-----------------------------------------------------------------------------
+// Padrão de ação do primeiro boss. É muito complicado pra descrever nesse
+// cabeçalho, então só olhe o código e deduza
+//=============================================================================
+Game.createActionPattern('boss2', {
+    //-----------------------------------------------------------------------
+    // * Inicialização
+    //-----------------------------------------------------------------------
+    initialize: function() {
+        this._deathCount = 0;
+        this._colors = [
+            0xFF0000, 0x00FF00, 0x0000FF, 
+            0xFFFF00, 0x00FFFF, 0xFF7700, 
+            0x7700FF
+        ];
+        this._fireTimer = 0;
+    },
+    //-----------------------------------------------------------------------
+    // * Atualização
+    //-----------------------------------------------------------------------
+    update: function() {
+        if (this._deathCount == 0 && Math.floor(this._fireTimer / 15) % 3 == 0) {
+            Game.createProjectile(this.hitbox.x, this.hitbox.y, 'spiralDown', this);
+            Game.createProjectile(this.hitbox.x, this.hitbox.y, 'spiralUp', this);
+
+            Game.createProjectile(Graphics.width - this.hitbox.x, 0, 'straightDown2', this);
+            Game.createProjectile(this.hitbox.x, 0, 'straightDown2', this);
+        }
+        else if (this._deathCount == 1) {
+            if (Math.floor(this._fireTimer / 120) % 2 == 0) {
+
+                var x = Math.random() * Graphics.width;
+
+                Game.createProjectile(x, Graphics.height / 6, 'targetPlayer', this);
+                Game.createProjectile(Graphics.width - x, Graphics.height / 6, 'targetPlayer', this);
+            }
+
+            if (Math.floor(this._fireTimer / 10) % 4 == 0) {
+                var x = Math.random() * Graphics.width;
+                Game.createProjectile(x, Graphics.height / 8, 'targetPlayer', this);
+                Game.createProjectile(Graphics.width - x, Graphics.height / 8, 'targetPlayer', this);
+            }
+        } else if (this._deathCount == 2 && Math.floor(this._fireTimer / 60) % 3 == 1) {
+            var p  = Game.createProjectile(this.hitbox.x, this.hitbox.y, 'spiralDown', this);
+            p.movement._velocities[0].angle += this._fireTimer / 30 * Math.PI;
+        }
+        this._fireTimer++;
+    },
+    //-----------------------------------------------------------------------
+    // * Efeito de morte
+    //-----------------------------------------------------------------------
+    death: function() {
+        this._deathCount++;
+
+        switch (this._deathCount) {
+            case 1:
+                this._positioned = false;
+                this.movement = new Movement([new Velocity(4, -Math.PI/2)]);
+                this._onPosInterval = setInterval(function() {
+                    if (this.hitbox.y <= Graphics.width / 6) {
+                        this.movement = Game.movement('static');
+                        clearInterval(this._onPosInterval);
+                        this._positioned = true;
+                    }
+                }.bind(this), 10);
+
+                this._onSzInterval = setInterval(function() {
+                    if (this.hitbox.width <= 24)
+                        clearInterval(this._onSzInterval);
+                    else
+                        this.hitbox.width = --this.hitbox.height;
+                }.bind(this), 24);
+
+                this._health = this._maxHealth;
+                break;
+            case 2:
+                this._onSzInterval = setInterval(function() {
+                    if (this.hitbox.width >= 12)
+                        clearInterval(this._onSzInterval);
+                    else
+                        this.hitbox.width = ++this.hitbox.height;
+                }.bind(this), 24);
+                this.movement = Game.movement('circleRightLeft');
+                this._health = this._maxHealth;
+                break;
+            case 3:
+                Game.currentStage.startTetris();
+                this._onSzInterval = setInterval(function() {
+                    if (this.hitbox.width >= 32)
+                        clearInterval(this._onSzInterval);
+                    else
+                        this.hitbox.width = ++this.hitbox.height;
+                }.bind(this), 24);
+                this.movement = Game.movement('static');
+                this._health = this._maxHealth;
+                break;
+        }
+
+        if (this._deathCount == 4) {
+            Game.currentStage.endTetris();
+            this.dispose();
+        }
     }
 });

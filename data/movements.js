@@ -15,8 +15,32 @@ Game.createMovement('static', []);
 //-----------------------------------------------------------------------------
 // Move-se em linha reta para cima a uma velocidade de 8px/frame
 //=============================================================================
-Game.createMovement('straightUp', [
+Game.createLinearMovement('straightUp', [
     new Velocity(8, -Math.PI / 2)
+]);
+//=============================================================================
+// ** straightDown
+//-----------------------------------------------------------------------------
+// Move-se em linha reta para baixo a uma velocidade de 8px/frame
+//=============================================================================
+Game.createLinearMovement('straightDown', [
+    new Velocity(3, Math.PI / 2)
+]);
+//=============================================================================
+// ** straightUp2
+//-----------------------------------------------------------------------------
+// Move-se em linha reta para cima a uma velocidade de 8px/frame
+//=============================================================================
+Game.createLinearMovement('straightUp2', [
+    new Velocity(6, -Math.PI / 2)
+]);
+//=============================================================================
+// ** straightDown2
+//-----------------------------------------------------------------------------
+// Move-se em linha reta para baixo a uma velocidade de 8px/frame
+//=============================================================================
+Game.createLinearMovement('straightDown2', [
+    new Velocity(6, Math.PI / 2)
 ]);
 //=============================================================================
 // ** straightLeft
@@ -31,8 +55,24 @@ Game.createMovement('straightLeft', [
 //-----------------------------------------------------------------------------
 // Move-se em linha reta para a direita a 4px/frame
 //=============================================================================
-Game.createMovement('straightRight', [
+Game.createLinearMovement('straightRight', [
     new Velocity(4, 0)
+]);
+//=============================================================================
+// ** straightLeft2
+//-----------------------------------------------------------------------------
+// Move-se em linha reta para a esquerda a 8px/frame
+//=============================================================================
+Game.createMovement('straightLeft2', [
+    new Velocity(6, Math.PI)
+]);
+//=============================================================================
+// ** straightRight2
+//-----------------------------------------------------------------------------
+// Move-se em linha reta para a direita a 8px/frame
+//=============================================================================
+Game.createLinearMovement('straightRight2', [
+    new Velocity(6, 0)
 ]);
 //=============================================================================
 // ** rightLeft
@@ -74,7 +114,7 @@ Game.createMovement('leftRight', [
 // ** circleRight
 //-----------------------------------------------------------------------------
 // Move-se em círculos no sentido horário, a uma velocidade escalar de 
-// 4px/frame
+// 2px/frame
 //=============================================================================
 Game.createMovement('circleRight', [
         new Velocity(2, 0)
@@ -87,13 +127,31 @@ Game.createMovement('circleRight', [
 // ** circleLeft
 //-----------------------------------------------------------------------------
 // Move-se em círculos no sentido anti-horário, a uma velocidade escalar de 
-// 4px/frame
+// 2px/frame
 //=============================================================================
 Game.createMovement('circleLeft', [
         new Velocity(2, -Math.PI)
     ],
     function() {
         this._velocities[0].angle -= 0.1;
+    }
+);
+//=============================================================================
+// ** circleRightLeft
+//-----------------------------------------------------------------------------
+// Move-se em círculos alternando sentidos, a uma velocidade escalar de 
+// 2px/frame
+//=============================================================================
+Game.createMovement('circleRightLeft', [
+        new Velocity(2, 0)
+    ],
+    function() {
+        if (!this._dir)
+            this._dir = 1;
+        this._velocities[0].angle += 0.1 * this._dir;
+        if (this._velocities[0].angle >= Math.PI * 2 ||
+            this._velocities[0].angle <= -Math.PI * 2)
+            this._dir *= -1;
     }
 );
 //=============================================================================
