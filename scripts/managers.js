@@ -972,11 +972,12 @@ var TextManager = {
         __checkType(style, 'object', 'style');
         
         var txt = document.createElement('span');
-        txt.innerText = text.replace('<', '&lt;').replace('>', '&gt;');
+        txt.innerHTML = text;
         txt.style.zIndex = 1;
         txt.style.position = 'absolute'; 
         txt.style.left = x;
         txt.style.top = y;
+        txt.style.textShadow = '0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000';
 
         for (var prop in style)
             txt.style[prop] = style[prop];
@@ -1010,7 +1011,6 @@ var TextManager = {
         var id = this.createText('' + n + ' - ' + name, '50%', '50%', {
             transform: 'translateX(-50%)',
             fontSize: '22pt',
-            textShadow: '0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000',
             webkitTouchCallout: 'none',
             webkitUserSelect: 'none',
             mozUserSelect: 'none',

@@ -297,3 +297,94 @@ Game.createStage({
         this.endTetris();
     }
 });
+//=============================================================================
+// Créditos
+//=============================================================================
+Game.createStage({
+    // Cores legais
+    backgroundColor:        0x000000,
+    playerColor:            0x000000,
+    enemyColor:             0x000000,
+    playerProjectileColor:  0x000000,
+    enemyProjectileColor:   0x000000,
+
+    // Música
+    bgm: ["audio/badapple.mp3"],
+
+    // Criação dos inimigos
+    initialize: function(noText) {
+        var e = Game.createEnemy(0, 0, 'static', 1, 'noexplode');
+        e.hitbox.width = e.hitbox.height = 0;
+
+        var id = TextManager.createText('Yet Another Bullet Hell', '50%', '50%', {
+            transform: 'translateX(-50%) translateY(-50%)',
+            fontSize: '32pt',
+            opacity: 1.0
+        }),
+        t = TextManager.getText(id);
+
+        setTimeout(function() {
+            var fadeout = setInterval(function() {
+                t.style.opacity -= 0.06;
+                if (t.style.opacity <= 0.0) {
+                    TextManager.removeText(id);
+                    clearInterval(fadeout);
+
+                    id = TextManager.createText('<strong>Programação</strong><br>Guilherme Guidotti Brandt', 
+                        '50%', '50%', {
+                            transform: 'translateX(-50%) translateY(-50%)',
+                            fontSize: '24pt',
+                            textAlign: 'center',
+                            opacity: 0.0
+                        }
+                    ), t = TextManager.getText(id);
+
+                    var fadein = setInterval(function() {
+                        t.style.opacity -= -0.06;
+                        if (t.style.opacity >= 1.0) {
+                            setTimeout(function() {
+                                var fadeout = setInterval(function() {
+                                    t.style.opacity -= 0.06;
+                                    if (t.style.opacity <= 0.0) {
+                                        TextManager.removeText(id);
+                                        clearInterval(fadeout);
+
+                                        id = TextManager.createText('<strong>Música</strong><br>Bad Apple ~ 東方 (Touhou), ZUN<br><br>Tetris Type-A ~ Tetris<br><br>Megalovania ~ Undertale, Toby "Radiation" Fox',
+                                            '50%', '50%', {
+                                                transform: 'translateX(-50%) translateY(-50%)',
+                                                fontSize: '24pt',
+                                                textAlign: 'center',
+                                                opacity: 0.0
+                                            }
+                                        ), t = TextManager.getText(id);
+
+                                        fadein = setInterval(function() {
+                                            t.style.opacity -= -0.06;
+                                            if (t.style.opacity >= 1.0) {
+                                                setTimeout(function() {
+                                                    fadeout = setInterval(function() {
+                                                        t.style.opacity -= 0.06;
+                                                        if (t.style.opacity <= 0.0) {
+                                                            TextManager.removeText(id);
+                                                            clearInterval(fadeout);
+                                                            e.dispose();
+                                                        }
+                                                    }, 16);
+                                                }, 6000);
+                                                clearInterval(fadein);
+                                            }
+                                        }, 16);
+                                    }
+                                }, 16);
+                            }, 4000);
+                            clearInterval(fadein);
+                        }
+                    }, 16);
+                }
+            }, 16);
+        }, 2000);
+    },
+
+    // Finalização do estágio
+    terminate: function() {}
+});

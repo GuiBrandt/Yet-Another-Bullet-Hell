@@ -9,9 +9,9 @@
 Graphics.initialize();
 //Graphics._glDrawMode = gl.LINE_LOOP;
 AudioManager.initialize();
-AudioManager._mute = true;
+//AudioManager._mute = true;
 TextManager.initialize();
-FPSManager.initialize(true);
+FPSManager.initialize();
 Game.start();
 
 if (isTouchDevice())
