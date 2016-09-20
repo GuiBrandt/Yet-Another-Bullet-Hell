@@ -222,11 +222,11 @@ Game.createStage({
     // Criação dos inimigos
     initialize: function(noText) {
         if (!noText)
-            TextManager.createStageText('BOSS', 'Blood Flow');
+            TextManager.createStageText('BOSS', 'And There Was Blood');
         else
             __checkType(noText, 'boolean', 'text');
 
-        this._boss = Game.createEnemy(Graphics.width / 6, Graphics.height / 3, 'rightLeft', 30, 'boss2');
+        this._boss = Game.createEnemy(Graphics.width / 6, Graphics.height / 3, 'rightLeft', 20, 'boss2');
         this._boss.hitbox.width = this._boss.hitbox.height = 32;
 
         this._colors = [

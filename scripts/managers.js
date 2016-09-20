@@ -599,6 +599,7 @@ window.addEventListener('blur', function() {
 // Controla o desenho das coisas na tela
 //=============================================================================
 var Graphics = {
+    _bufferSize: 512,
     //-----------------------------------------------------------------------
     // * Inicializa a parte gráfica do jogo
     //-----------------------------------------------------------------------
@@ -722,12 +723,12 @@ var Graphics = {
         if (!this._vbos[color]) {
             this._vbos[color] = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, this._vbos[color]);
-            gl.bufferData(gl.ARRAY_BUFFER, 512 * 8 * 8, gl.STREAM_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, this._bufferSize * 8 * 8, gl.STREAM_DRAW);
             gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, gl.FALSE, 0, 0);
 
             this._vibs[color] = gl.createBuffer();
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._vibs[color]);
-            var indices = new Uint16Array(512 * 6);
+            var indices = new Uint16Array(this._bufferSize * 6);
             for (var c = 0; c * 6 < indices.length; c += 1) {
                 var i = c * 6, n = c * 4;
                 indices[i]    = n;
@@ -1009,7 +1010,7 @@ var TextManager = {
         var id = this.createText('' + n + ' - ' + name, '50%', '50%', {
             transform: 'translateX(-50%)',
             fontSize: '22pt',
-            textShadow: '0px 0px 2px #000',
+            textShadow: '0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000, 0px 0px 1px #000',
             webkitTouchCallout: 'none',
             webkitUserSelect: 'none',
             mozUserSelect: 'none',
@@ -1048,7 +1049,7 @@ var FPSManager = {
     // * Propriedades privadas
     //-----------------------------------------------------------------------
     _frameSkip: 0,
-    _maxFrameSkip: 3,
+    _maxFrameSkip: 0,
     _fpsMeter: null,
     //-----------------------------------------------------------------------
     // * Inicializa o controlador de FPS

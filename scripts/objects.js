@@ -40,15 +40,8 @@ var Hitbox = __class(null, {
     collidesWith: function(other) {
         __checkClass(other, Hitbox, 'other');
 
-        var i = 0;
-        
-        if (this.right.between(other.left, other.right))     i++;
-        else if (this.left.between(other.left, other.right)) i++;
-        
-        if (this.bottom.between(other.top, other.bottom))   i++;
-        else if (this.top.between(other.top, other.bottom)) i++;
-        
-        return i > 1;
+        return this.left < other.right && this.right > other.left &&
+                this.top < other.bottom && this.bottom > other.top;
     }
 }, {
     //-----------------------------------------------------------------------

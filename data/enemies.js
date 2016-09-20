@@ -334,9 +334,9 @@ Game.createActionPattern('arc2', {
     death: explode
 });
 //=============================================================================
-// ** boss2
+// ** boss1
 //-----------------------------------------------------------------------------
-// Padrão de ação do segundo boss. É muito complicado pra descrever nesse
+// Padrão de ação do primeiro boss. É muito complicado pra descrever nesse
 // cabeçalho, então só olhe o código e deduza
 //=============================================================================
 Game.createActionPattern('boss1', {
@@ -465,9 +465,9 @@ Game.createActionPattern('boss1', {
     }
 });
 //=============================================================================
-// ** boss1
+// ** boss2
 //-----------------------------------------------------------------------------
-// Padrão de ação do primeiro boss. É muito complicado pra descrever nesse
+// Padrão de ação do segundo boss. É muito complicado pra descrever nesse
 // cabeçalho, então só olhe o código e deduza
 //=============================================================================
 Game.createActionPattern('boss2', {
@@ -487,6 +487,21 @@ Game.createActionPattern('boss2', {
     // * Atualização
     //-----------------------------------------------------------------------
     update: function() {
+
+        function shootCircle(x, y) {
+            if (this._fireTimer % 60 == 0) {
+                var density = 21;
+                for (var i = 0; i < density; i++) {
+                    Game.createProjectile(
+                        x, y,
+                        new Movement([new Velocity(2, Math.PI * 2 / density * i)]),
+                        this
+                    );
+                }
+                AudioManager.playSe("audio/enemyShot01.m4a", 0.05, 0.5);
+            }
+        }
+
         if (this._deathCount == 0 && Math.floor(this._fireTimer / 15) % 3 == 0) {
             Game.createProjectile(this.hitbox.x, this.hitbox.y, 'spiralDown', this);
             Game.createProjectile(this.hitbox.x, this.hitbox.y, 'spiralUp', this);
@@ -508,9 +523,34 @@ Game.createActionPattern('boss2', {
                 Game.createProjectile(x, Graphics.height / 8, 'targetPlayer', this);
                 Game.createProjectile(Graphics.width - x, Graphics.height / 8, 'targetPlayer', this);
             }
-        } else if (this._deathCount == 2 && Math.floor(this._fireTimer / 60) % 3 == 1) {
-            var p  = Game.createProjectile(this.hitbox.x, this.hitbox.y, 'spiralDown', this);
-            p.movement._velocities[0].angle += this._fireTimer / 30 * Math.PI;
+        } else if (this._deathCount == 2) {
+            if (this._fireTimer % 20 == 0) {
+                function shootVertLine(x) {
+                    var p = Game.createProjectile(x, 0, 'straightDown2', this);
+                    p.hitbox.height = 128;
+                }
+
+                function shootHorzLine(y) {
+                    var p = Game.createProjectile(0, y, 'straightRight2', this);
+                    p.hitbox.width = 128;
+                }
+
+                var x = Math.random() * Graphics.width,
+                    y = Math.random() * Graphics.height;
+                shootVertLine.call(this, x);
+                shootHorzLine.call(this, y);
+            } 
+
+            shootCircle.call(this, this.hitbox._x, this.hitbox._y);
+        } else if (this._deathCount == 3) {
+            shootCircle.call(this, this.hitbox._x, this.hitbox._y);
+            
+            if (this._fireTimer % 2 == 0 && this._fireTimer % 180 < 120) {
+                Game.createProjectile(0, 0, 'targetPlayer', this);
+                Game.createProjectile(Graphics.width, Graphics.height, 'targetPlayer', this);
+                Game.createProjectile(0, Graphics.height, 'targetPlayer', this);
+                Game.createProjectile(Graphics.width, 0, 'targetPlayer', this);
+            }
         }
         this._fireTimer++;
     },
@@ -552,21 +592,18 @@ Game.createActionPattern('boss2', {
                 this._health = this._maxHealth;
                 break;
             case 3:
-                Game.currentStage.startTetris();
                 this._onSzInterval = setInterval(function() {
                     if (this.hitbox.width >= 32)
                         clearInterval(this._onSzInterval);
                     else
                         this.hitbox.width = ++this.hitbox.height;
-                }.bind(this), 24);
+                }.bind(this), 16);
                 this.movement = Game.movement('static');
-                this._health = this._maxHealth;
+                this._health = 50;
                 break;
         }
 
-        if (this._deathCount == 4) {
-            Game.currentStage.endTetris();
+        if (this._deathCount == 4)
             this.dispose();
-        }
     }
 });
