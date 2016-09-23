@@ -103,7 +103,7 @@ Game.createStage({
     enemyProjectileColor:   0xFFFF00,
     
     // Música
-    bgm: ["audio/badapple.mp3"],
+    bgm: ["audio/megalovania.mp3"],
 
     // Criação dos inimigos
     initialize: function(noText) {
@@ -217,16 +217,16 @@ Game.createStage({
     enemyProjectileColor:   0xFF0000,
     
     // Música
-    bgm: ["audio/tetris.mp3"],
+    bgm: ["audio/unowenwasher.mp3", 0.8],
 
     // Criação dos inimigos
     initialize: function(noText) {
         if (!noText)
-            TextManager.createStageText('BOSS', 'And There Was Blood');
+            TextManager.createStageText('BOSS', 'There Will Be Blood');
         else
             __checkType(noText, 'boolean', 'text');
 
-        this._boss = Game.createEnemy(Graphics.width / 6, Graphics.height / 3, 'rightLeft', 20, 'boss2');
+        this._boss = Game.createEnemy(Graphics.width / 6, Graphics.height / 3, 'rightLeft', 36, 'boss2');
         this._boss.hitbox.width = this._boss.hitbox.height = 32;
 
         this._colors = [
@@ -349,7 +349,7 @@ Game.createStage({
                                         TextManager.removeText(id);
                                         clearInterval(fadeout);
 
-                                        id = TextManager.createText('<strong>Música</strong><br>Bad Apple ~ 東方 (Touhou), ZUN<br><br>Tetris Type-A ~ Tetris<br><br>Megalovania ~ Undertale, Toby "Radiation" Fox',
+                                        id = TextManager.createText('<strong>Música</strong><br>Bad Apple & U.N. Owen Was Her ~ 東方 (Touhou), ZUN<br>Tetris Type-A ~ Tetris<br>Megalovania ~ Undertale, Toby "Radiation" Fox',
                                             '50%', '50%', {
                                                 transform: 'translateX(-50%) translateY(-50%)',
                                                 fontSize: '24pt',
