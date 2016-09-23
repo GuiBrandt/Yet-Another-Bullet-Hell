@@ -33,7 +33,7 @@
             //-----------------------------------------------------------------------------
             // * Uniforms
             //-----------------------------------------------------------------------------
-            uniform vec3 color; // A cor a ser desenhada
+            uniform vec3 color;
             //-----------------------------------------------------------------------------
             // * Ponto de entrada
             //-----------------------------------------------------------------------------
@@ -50,27 +50,20 @@
             //=============================================================================
             // Quem precisa de floats de alta precisão, afinal?
             precision lowp float;
-
             // Atributo de posição do vértice
-            attribute vec3 vertexPosition;
+            attribute vec2 vertexPosition;
             //-----------------------------------------------------------------------------
             // * Uniforms
             //-----------------------------------------------------------------------------
             uniform vec2 screenSize;    // Dimensões da tela (em píxels)
-            uniform vec2 size;          // Dimensões do retângulo (em píxels)
-            uniform vec2 translate;     // Translação aplicada ao retângulo
             //-----------------------------------------------------------------------------
             // * Ponto de entrada
             //-----------------------------------------------------------------------------
             void main(void) {
-                gl_Position = vec4(
-                    (vertexPosition.x * size.x + translate.x * 2.0 - screenSize.x) / screenSize.x, 
-                    -(vertexPosition.y * size.y + translate.y * 2.0 - screenSize.y) / screenSize.y, 
-                    0.0, 
-                    1.0
-                );
+                gl_Position = vec4(vertexPosition.x, vertexPosition.y, 0.0, 1.0);
             }
         </script>
+        <script type="text/javascript" src="scripts/fpsmeter.min.js"></script>
     </head>
     <body>
         <script type="text/javascript" src="scripts/yabh.min.js"></script>
