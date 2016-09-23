@@ -279,6 +279,7 @@ var Game = {
     _actionPatterns: {},
     _stageID: 0,
     _pause: false,
+    _stop: false,
     _showText: true,
     //-----------------------------------------------------------------------
     // * Começa o jogo
@@ -292,6 +293,8 @@ var Game = {
     // * Atualiza o jogo
     //-----------------------------------------------------------------------
     update: function() {
+        if (this._stop) return;
+
         this._updating = true;
 
         var e = false;
@@ -313,13 +316,6 @@ var Game = {
             this.setupStage();
         }
 
-        if (Input._keysDown.contains(17) && !this._pause)
-            return this.restart();
-        if (Input._keysDown.contains(27) || Input._keysDown.contains(226))
-            this._pause = true;
-        else if (Input.actionPressed())
-            this._pause = false;
-
         this._clock++;
 
         for (var i = 0; i < this._newObjects.length; i++)
@@ -330,12 +326,20 @@ var Game = {
             this._objects.remove(null);
 
         this._updating = false;
+
+        if (Input._keysDown.contains(17) && !this._pause)
+            return this.restart();
+        if (Input._keysDown.contains(27) || Input._keysDown.contains(226))
+            this._pause = true;
+        else if (Input.actionPressed())
+            this._pause = false;
     },
     //-----------------------------------------------------------------------
     // * Recomeça o estágio atual
     //-----------------------------------------------------------------------
     restart: function() {
         this.currentStage.terminate();
+        this._stop = false;
         this.clear();
         this.start();
     },
@@ -351,6 +355,7 @@ var Game = {
         this._player = null;
         Graphics.fullClear();
         this._objects = [];
+        this._newObjects = [];
     },
     //-----------------------------------------------------------------------
     // * Começa uma fase
@@ -378,7 +383,7 @@ var Game = {
     _checkFinished: function() {
         if (this._stageID >= this._stages.length) {
             console.log('Você zerou o jogo!');
-            window.location = window.location;
+            this._stageID = 0;
         }
     },
     //-----------------------------------------------------------------------
@@ -591,7 +596,8 @@ Object.defineProperties(Game, {
     }
 });
 window.addEventListener('blur', function() {
-    Game.pause = true;
+    if (!Game._stop)
+        Game.pause = true;
 });
 //=============================================================================
 // ** Graphics
@@ -600,6 +606,8 @@ window.addEventListener('blur', function() {
 //=============================================================================
 var Graphics = {
     _bufferSize: 512,
+    _backgroundColor: 0x000000,
+    _invertColors: false,
     //-----------------------------------------------------------------------
     // * Inicializa a parte gráfica do jogo
     //-----------------------------------------------------------------------
@@ -642,6 +650,7 @@ var Graphics = {
             if (!gl)
                 throw new Error();
             gl.viewport(0, 0, this._canvas.width, this._canvas.height);
+            gl.disable(gl.DEPTH_TEST);
             this._glDrawMode = gl.TRIANGLES;
         } catch(e) {
             alert('Falha ao inicializar WebGL');
@@ -742,17 +751,26 @@ var Graphics = {
             gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
         }
 
-        gl.uniform3f(this._colorUniform,
-            ((color >> 16) & 0xFF) / 255.0,
-            ((color >> 8) & 0xFF) / 255.0,
-            (color & 0xFF) / 255.0
-        );
+        if (this._invertColors)
+            gl.uniform3f(this._colorUniform,
+                1 - ((color >> 16) & 0xFF) / 255.0,
+                1 - ((color >> 8) & 0xFF) / 255.0,
+                1 - (color & 0xFF) / 255.0
+            );
+        else
+            gl.uniform3f(this._colorUniform,
+                ((color >> 16) & 0xFF) / 255.0,
+                ((color >> 8) & 0xFF) / 255.0,
+                (color & 0xFF) / 255.0
+            );
 
         var vertices = new Float32Array(objects.length * 8);
 
         for (var i = 0; i < objects.length; i++) {
-            var l = objects[i].hitbox.left,  t = objects[i].hitbox.top,
-                r = objects[i].hitbox.right, b = objects[i].hitbox.bottom,
+            var l = ((objects[i].hitbox.left << 1) - Graphics.width) / Graphics.width,
+                t = -((objects[i].hitbox.top << 1) - Graphics.height) / Graphics.height,
+                r = ((objects[i].hitbox.right << 1) - Graphics.width) / Graphics.width,
+                b = -((objects[i].hitbox.bottom << 1) - Graphics.height) / Graphics.height,
                 o = i * 8;
 
             vertices[o]     = l; vertices[o+1]  = t;
@@ -797,7 +815,7 @@ var Graphics = {
     //-----------------------------------------------------------------------
     clear: function() {
         if (this._useWebGL)
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.clear(gl.COLOR_BUFFER_BIT);
         else
             Game.forEachObject(function(obj) {
                 this._canvasContext.clearRect(
@@ -807,6 +825,13 @@ var Graphics = {
                     (obj.hitbox.height + 0.5) | 0
                 );
             }.bind(this));
+    },
+    //-----------------------------------------------------------------------
+    // * Inverte as cores
+    //-----------------------------------------------------------------------
+    invertColors: function() {
+        this._invertColors = !this._invertColors;
+        this.backgroundColor = 0xFFFFFF - this.backgroundColor;
     },
     //-----------------------------------------------------------------------
     // * Desenha tudo na tela com canvas
@@ -855,12 +880,13 @@ Object.defineProperties(Graphics, {
         }
     },
     backgroundColor: {
-        get: function() { return this._canvas.style.backgroundColor; },
+        get: function() { return this._backgroundColor; },
         set: function(value) {
             __checkType(value, 'number', 'value');
             var c = value.toString(16);
             this._canvas.style.backgroundColor = '#' + 
                 "000000".substring(0, 6 - c.length) + c;
+            this._backgroundColor = value;
         }
     }
 });

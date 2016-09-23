@@ -303,9 +303,9 @@ Game.createStage({
 Game.createStage({
     // Cores legais
     backgroundColor:        0x000000,
-    playerColor:            0x000000,
+    playerColor:            0xffffff,
     enemyColor:             0x000000,
-    playerProjectileColor:  0x000000,
+    playerProjectileColor:  0xff0000,
     enemyProjectileColor:   0x000000,
 
     // Música

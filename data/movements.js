@@ -181,6 +181,32 @@ Game.createMovement('spiralDown', [
     }
 );
 //=============================================================================
+// ** spiralRight
+//-----------------------------------------------------------------------------
+// Move-se numa espiral no sentido horário para a direita
+//=============================================================================
+Game.createMovement('spiralRight', [
+        new Velocity(4, 0), 
+        new Velocity(8, 0)
+    ],
+    function() {
+        this._velocities[0].angle -= 0.1;
+    }
+);
+//=============================================================================
+// ** spiralLeft
+//-----------------------------------------------------------------------------
+// Move-se numa espiral no sentido anti-horário para a esquerda
+//=============================================================================
+Game.createMovement('spiralLeft', [
+        new Velocity(4, Math.PI),
+        new Velocity(8, Math.PI)
+    ],
+    function() {
+        this._velocities[0].angle += 0.1;
+    }
+);
+//=============================================================================
 // ** spiralDown
 //-----------------------------------------------------------------------------
 // Move-se numa espiral no sentido anti-horário para baixo

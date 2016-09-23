@@ -12,6 +12,7 @@ AudioManager.initialize();
 //AudioManager._mute = true;
 TextManager.initialize();
 FPSManager.initialize();
+
 Game.start();
 
 if (isTouchDevice())

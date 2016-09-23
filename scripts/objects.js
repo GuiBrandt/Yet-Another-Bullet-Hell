@@ -603,14 +603,6 @@ var Player = __class(GameObject, {
     update: function() {
         this.__super__.update.call(this);
 
-        Game.forEachObject(function(obj) {
-            if (((obj instanceof Projectile && obj.shooter instanceof Enemy) || obj instanceof Enemy) &&
-                    obj.hitbox.collidesWith(this._hitbox)) {
-                obj.dispose();
-                Game.restart();
-            }
-        }.bind(this));
-
         if (this._hitbox.left < 0)
             this._hitbox.left = 0;
         if (this._hitbox.right > Graphics.width)
@@ -630,6 +622,18 @@ var Player = __class(GameObject, {
                 );
         } else if (this._fireTimer > 0)
             this._fireTimer = 0;
+
+        Game.forEachObject(function(obj) {
+            if (((obj instanceof Projectile && obj.shooter instanceof Enemy) || obj instanceof Enemy) &&
+                    obj.hitbox.collidesWith(this._hitbox)) {
+                Graphics.invertColors();
+                Game._stop = true;
+                setTimeout(function() {
+                    Graphics.invertColors();
+                    Game.restart();
+                }, 500);
+            }
+        }.bind(this));
     },
     //-----------------------------------------------------------------------
     // * Verifica se o objeto deveria ser apagado

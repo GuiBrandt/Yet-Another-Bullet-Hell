@@ -408,8 +408,8 @@ Game.createActionPattern('boss1', {
                         shootCircle();
                     break;
                 case 3:
-                    if (this._fireTimer % 2 == 0)
-                        for (var i = 0; i < 2; i++) {
+                    if (this._fireTimer % 1 == 0)
+                        for (var i = 0; i < 2; i++)
                             Game.createProjectile(
                                 this._hitbox.x, this._hitbox.y,
                                 new Movement([
@@ -417,7 +417,6 @@ Game.createActionPattern('boss1', {
                                 ]),
                                 this
                             );
-                        }
             }
 
         var r = 0xff, n = Math.floor(0xFF - pct * 0xFF) & 0xFF;
@@ -482,6 +481,7 @@ Game.createActionPattern('boss2', {
             0x7700FF
         ];
         this._fireTimer = 0;
+        this._health = this._maxHealth / 2;
     },
     //-----------------------------------------------------------------------
     // * Atualização
@@ -502,12 +502,25 @@ Game.createActionPattern('boss2', {
             }
         }
 
-        if (this._deathCount == 0 && Math.floor(this._fireTimer / 15) % 3 == 0) {
-            Game.createProjectile(this.hitbox.x, this.hitbox.y, 'spiralDown', this);
-            Game.createProjectile(this.hitbox.x, this.hitbox.y, 'spiralUp', this);
-
-            Game.createProjectile(Graphics.width - this.hitbox.x, 0, 'straightDown2', this);
-            Game.createProjectile(this.hitbox.x, 0, 'straightDown2', this);
+        if (this._deathCount == 0) {
+            
+            if (Math.floor(this._fireTimer / 40) % 2 == 0 && this._fireTimer % 3 == 0) {
+                var p = Game.createProjectile(this.hitbox.x, this.hitbox.y, 'straightDown2', this);
+                p.movement._velocities[0].angle += this._fireTimer / 60 * Math.PI * 2;
+                p = Game.createProjectile(this.hitbox.x, this.hitbox.y, 'straightUp2', this);
+                p.movement._velocities[0].angle += this._fireTimer / 60 * Math.PI * 2;
+                p = Game.createProjectile(this.hitbox.x, this.hitbox.y, 'straightRight2', this);
+                p.movement._velocities[0].angle += this._fireTimer / 60 * Math.PI * 2;
+                p = Game.createProjectile(this.hitbox.x, this.hitbox.y, 'straightLeft2', this);
+                p.movement._velocities[0].angle += this._fireTimer / 60 * Math.PI * 2;
+            }
+            
+            
+            
+            if (Math.floor(this._fireTimer / 15) % 3 == 0) {
+                Game.createProjectile(Graphics.width - this.hitbox.x, 0, 'straightDown2', this);
+                Game.createProjectile(this.hitbox.x, 0, 'straightDown2', this);
+            }
         }
         else if (this._deathCount == 1) {
             if (Math.floor(this._fireTimer / 120) % 2 == 0) {
@@ -543,9 +556,9 @@ Game.createActionPattern('boss2', {
 
             shootCircle.call(this, this.hitbox._x, this.hitbox._y);
         } else if (this._deathCount == 3) {
-            shootCircle.call(this, this.hitbox._x, this.hitbox._y);
+            //shootCircle.call(this, this.hitbox._x, this.hitbox._y);
             
-            if (this._fireTimer % 2 == 0 && this._fireTimer % 180 < 120) {
+            if (this._fireTimer % 2 == 0 && this._fireTimer % 210 < 120) {
                 Game.createProjectile(0, 0, 'targetPlayer', this);
                 Game.createProjectile(Graphics.width, Graphics.height, 'targetPlayer', this);
                 Game.createProjectile(0, Graphics.height, 'targetPlayer', this);
