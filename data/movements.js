@@ -43,6 +43,22 @@ Game.createLinearMovement('straightDown2', [
     new Velocity(6, Math.PI / 2)
 ]);
 //=============================================================================
+// ** straightUp3
+//-----------------------------------------------------------------------------
+// Move-se em linha reta para cima a uma velocidade de 2px/frame
+//=============================================================================
+Game.createLinearMovement('straightUp3', [
+    new Velocity(2, -Math.PI / 2)
+]);
+//=============================================================================
+// ** straightDown3
+//-----------------------------------------------------------------------------
+// Move-se em linha reta para baixo a uma velocidade de 2px/frame
+//=============================================================================
+Game.createLinearMovement('straightDown3', [
+    new Velocity(2, Math.PI / 2)
+]);
+//=============================================================================
 // ** straightLeft
 //-----------------------------------------------------------------------------
 // Move-se em linha reta para a esquerda a 4px/frame
@@ -73,6 +89,22 @@ Game.createMovement('straightLeft2', [
 //=============================================================================
 Game.createLinearMovement('straightRight2', [
     new Velocity(6, 0)
+]);
+//=============================================================================
+// ** straightLeft3
+//-----------------------------------------------------------------------------
+// Move-se em linha reta para a esquerda a 2px/frame
+//=============================================================================
+Game.createMovement('straightLeft3', [
+    new Velocity(2, Math.PI)
+]);
+//=============================================================================
+// ** straightRight3
+//-----------------------------------------------------------------------------
+// Move-se em linha reta para a direita a 2px/frame
+//=============================================================================
+Game.createLinearMovement('straightRight3', [
+    new Velocity(2, 0)
 ]);
 //=============================================================================
 // ** rightLeft
@@ -225,13 +257,13 @@ Game.createMovement('spiralDown2', [
 // Persegue o jogador a 4px/frame
 //=============================================================================
 Game.createMovement('chasePlayer', [
-        new Velocity(4, 0)
+        new Velocity(1, 0)
     ],
     function() {
         var dy = this._object.hitbox.y - Game.player.hitbox.y,
             dx = this._object.hitbox.x - Game.player.hitbox.x;
         var theta = Math.atan2(dy, dx);
-        this._velocities[0].angle = theta + Math.PI;
+        this._velocities[0].angle = (this._velocities[0].angle * 24 + theta + Math.PI) / 25;
     }
 );
 //=============================================================================
@@ -251,7 +283,27 @@ Game.createMovement('targetPlayer', [
             dx = this._object.hitbox.x - Game.player.hitbox.x;
         var theta = Math.atan2(dy, dx);
         this._velocities[0].angle = theta + Math.PI;
-    });
+    }
+);
+//=============================================================================
+// ** targetPlayer2
+//-----------------------------------------------------------------------------
+// Vai na direção do jogador a 6px/frame, diferente do `chasePlayer`, esse
+// movimento nunca muda de ângulo
+//=============================================================================
+Game.createMovement('targetPlayer2', [
+        new Velocity(6, 0)
+    ], 
+    function() {
+        if (this._targeted) 
+            return;
+        this._targeted = true;
+        var dy = this._object.hitbox.y - Game.player.hitbox.y,
+            dx = this._object.hitbox.x - Game.player.hitbox.x;
+        var theta = Math.atan2(dy, dx);
+        this._velocities[0].angle = theta + Math.PI;
+    }
+);
 //=============================================================================
 // ** player
 //-----------------------------------------------------------------------------
@@ -260,7 +312,7 @@ Game.createMovement('targetPlayer', [
 Game.createMovement('player', [new Velocity(0, 0)],
     function() {
         if (!isTouchDevice()) {
-            this._velocities[0].module = Input.shiftPressed() ? 1.25 : 3;
+            this._velocities[0].module = Input.shiftPressed() ? 1.25 : 2;
             var t = ([
                 0,
                 Math.PI * 3 / 4,    Math.PI / 2,        Math.PI / 4,

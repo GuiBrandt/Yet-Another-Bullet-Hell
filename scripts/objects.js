@@ -623,7 +623,9 @@ var Player = __class(GameObject, {
         } else if (this._fireTimer > 0)
             this._fireTimer = 0;
 
+        var dead = false;
         Game.forEachObject(function(obj) {
+            if (dead) return;
             if (((obj instanceof Projectile && obj.shooter instanceof Enemy) || obj instanceof Enemy) &&
                     obj.hitbox.collidesWith(this._hitbox)) {
                 Graphics.invertColors();
@@ -632,6 +634,7 @@ var Player = __class(GameObject, {
                     Graphics.invertColors();
                     Game.restart();
                 }, 500);
+                dead = true;
             }
         }.bind(this));
     },

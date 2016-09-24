@@ -57,11 +57,11 @@ Game.createActionPattern('noexplode', {
     }
 });
 //=============================================================================
-// ** straightUp
+// ** spinRight
 //-----------------------------------------------------------------------------
-// Atira para cima
+// Atira uma barra giratória para a direita
 //=============================================================================
-Game.createActionPattern('straightUp', {
+Game.createActionPattern('spinRight', {
     //-----------------------------------------------------------------------
     // * Inicialização
     //-----------------------------------------------------------------------
@@ -72,14 +72,53 @@ Game.createActionPattern('straightUp', {
     // * Atualização
     //-----------------------------------------------------------------------
     update: function() {
-        if (this._fireTimer % 5 == 0)
-            Game.createProjectile(this._hitbox.x, this._hitbox.y, 'straightUp', this);
+        if (this._fireTimer % 48 < 8) {
+            Game.createProjectile(
+                this._hitbox.x, this._hitbox.y, 
+                new Movement([new Velocity(3 + (this._fireTimer % 32 + 1) / 8, 0)]), 
+                this
+            );
+        }
         this._fireTimer++;
     },
     //-----------------------------------------------------------------------
     // * Efeito de morte
     //-----------------------------------------------------------------------
-    death: function() {}
+    death: function() {
+        this.dispose();
+    }
+});
+//=============================================================================
+// ** spinLeft
+//-----------------------------------------------------------------------------
+// Atira uma barra giratória para a esquerda
+//=============================================================================
+Game.createActionPattern('spinLeft', {
+    //-----------------------------------------------------------------------
+    // * Inicialização
+    //-----------------------------------------------------------------------
+    initialize: function() {
+        this._fireTimer = 0;
+    },
+    //-----------------------------------------------------------------------
+    // * Atualização
+    //-----------------------------------------------------------------------
+    update: function() {
+        if (this._fireTimer % 48 < 8) {
+            Game.createProjectile(
+                this._hitbox.x, this._hitbox.y, 
+                new Movement([new Velocity(3 + (this._fireTimer % 32 + 1) / 8, Math.PI)]), 
+                this
+            );
+        }
+        this._fireTimer++;
+    },
+    //-----------------------------------------------------------------------
+    // * Efeito de morte
+    //-----------------------------------------------------------------------
+    death: function() {
+        this.dispose();
+    }
 });
 //=============================================================================
 // ** shootPlayer
@@ -184,6 +223,87 @@ Game.createActionPattern('circle1', {
     // * Efeito de morte
     //-----------------------------------------------------------------------
     death: explode
+});
+//=============================================================================
+// ** circle2
+//-----------------------------------------------------------------------------
+// Atira em círculos (menos que circle1)
+//=============================================================================
+Game.createActionPattern('circle2', {
+    //-----------------------------------------------------------------------
+    // * Inicialização
+    //-----------------------------------------------------------------------
+    initialize: function() {
+        this._fireTimer = 0;
+    },
+    //-----------------------------------------------------------------------
+    // * Atualização
+    //-----------------------------------------------------------------------
+    update: function() {
+        if (this._fireTimer % 36 == 0) {
+            for (var i = 0; i < 4; i++)
+                Game.createProjectile(
+                    this._hitbox.x, this._hitbox.y,
+                    new Movement([new Velocity(3, Math.PI * 2 / 4 * i + Math.PI / 4)]),
+                    this
+                );
+            AudioManager.playSe("audio/enemyShot01.m4a", 0.05, 0.5);
+        }
+        this._fireTimer++;
+    },
+    //-----------------------------------------------------------------------
+    // * Efeito de morte
+    //-----------------------------------------------------------------------
+    death: function() {
+        for (var i = 0; i < 3; i++)
+                Game.createProjectile(
+                    this._hitbox.x, this._hitbox.y,
+                    new Movement([new Velocity(3, Math.PI * 2 / 5 * i + Math.PI / 3)]),
+                    this
+                );
+        AudioManager.playSe("audio/enemyDeath.m4a", 0.2, 0.5);
+        this.dispose();
+    }
+});
+//=============================================================================
+// ** circlePlayer
+//-----------------------------------------------------------------------------
+// Atira círculos em linha reta na direção do jogador
+//=============================================================================
+Game.createActionPattern('circlePlayer', {
+    //-----------------------------------------------------------------------
+    // * Inicialização
+    //-----------------------------------------------------------------------
+    initialize: function() {
+        this._fireTimer = 0;
+    },
+    //-----------------------------------------------------------------------
+    // * Atualização
+    //-----------------------------------------------------------------------
+    update: function() {
+        var radius = 24, density = 32;
+        if (this._fireTimer % 56 == 0) {
+            var dx = Game.player.hitbox.x - this.hitbox.x, 
+                dy = Game.player.hitbox.y - this.hitbox.y, 
+                targetTheta = Math.atan2(dy, dx);
+            for (var i = 0; i < density; i++) {
+                var t = Math.PI * 2 / density * i;
+                Game.createProjectile(
+                    this._hitbox.x + Math.cos(t) * radius, 
+                    this._hitbox.y + Math.sin(t) * radius,
+                    new Movement([new Velocity(3, targetTheta)]),
+                    this
+                );
+            }
+        }
+        this._fireTimer++;
+    },
+    //-----------------------------------------------------------------------
+    // * Efeito de morte
+    //-----------------------------------------------------------------------
+    death: function() {
+        this.dispose();
+    }
 });
 //=============================================================================
 // ** spiral1
@@ -475,11 +595,6 @@ Game.createActionPattern('boss2', {
     //-----------------------------------------------------------------------
     initialize: function() {
         this._deathCount = 0;
-        this._colors = [
-            0xFF0000, 0x00FF00, 0x0000FF, 
-            0xFFFF00, 0x00FFFF, 0xFF7700, 
-            0x7700FF
-        ];
         this._fireTimer = 0;
         this._health = this._maxHealth / 2;
     },
@@ -572,6 +687,7 @@ Game.createActionPattern('boss2', {
     //-----------------------------------------------------------------------
     death: function() {
         this._deathCount++;
+        this._fireTimer = 0;
 
         switch (this._deathCount) {
             case 1:
@@ -618,5 +734,107 @@ Game.createActionPattern('boss2', {
 
         if (this._deathCount == 4)
             this.dispose();
+    }
+});
+//=============================================================================
+// ** boss3
+//-----------------------------------------------------------------------------
+// Padrão de ação do terceiro boss. É muito complicado pra descrever nesse
+// cabeçalho, então só olhe o código e deduza
+//=============================================================================
+Game.createActionPattern("boss3", {
+    //-----------------------------------------------------------------------
+    // * Inicialização
+    //-----------------------------------------------------------------------
+    initialize: function() {
+        this._deathCount = 0;
+        this._fireTimer = 0;
+        this._projectiles = [];
+    },
+    //-----------------------------------------------------------------------
+    // * Atualização
+    //-----------------------------------------------------------------------
+    update: function() {
+        switch (this._deathCount) {
+            case 0:
+                if (this._fireTimer % 64 == 0) {
+                    if (this._fireTimer % 128 == 0)
+                        for (var x = 0; x < Graphics.width; x += 32)
+                            Game.createProjectile(
+                                x, 64 + Math.sin(x / 180 * Math.PI) * 64,
+                                'straightDown', this
+                            );
+                    else
+                        for (var x = 0; x < Graphics.width; x += 32)
+                            Game.createProjectile(
+                                x, 64 + Math.cos(x / 180 * Math.PI) * 64,
+                                'straightDown', this
+                            );
+                }
+
+                if (this._fireTimer % 60 == 0) {
+                    if (this._fireTimer % 180 == 0)
+                        for (var i = 0; i < 96; i++)
+                            Game.createProjectile(
+                                this.hitbox.x + Math.cos(Math.PI / 16 * i) * 96, 
+                                this.hitbox.y + Math.sin(Math.PI / 16 * i) * 96, 
+                                'targetPlayer2', 
+                                this);
+                    else if (this._fireTimer % 120 == 0)
+                        for (var i = 0; i < 96; i++)
+                            Game.createProjectile(
+                                Graphics.width / 3 + Math.cos(Math.PI / 16 * i) * 96, 
+                                this.hitbox.y + Math.sin(Math.PI / 16 * i) * 96, 
+                                'targetPlayer2', 
+                                this);
+                    else
+                        for (var i = 0; i < 96; i++)
+                            Game.createProjectile(
+                                Graphics.width * 2 / 3 + Math.cos(Math.PI / 16 * i) * 96, 
+                                this.hitbox.y + Math.sin(Math.PI / 16 * i) * 96, 
+                                'targetPlayer2', 
+                                this);
+                }
+                break;
+            case 1:
+                if (this._fireTimer % 5 == 0) {
+                        Game.createProjectile(
+                            Graphics.width * Math.random(), Graphics.height - 1,
+                            'straightUp3', this
+                        );
+                }
+                break;
+            case 2:
+                if (this._fireTimer < 60)
+                    break;
+                if (this._fireTimer % 16 == 0) {
+                    var r = Math.random() * Graphics.height;
+                    var n = Math.random() * 6 + 32;
+                    var t = Math.random() * Math.PI * 5 / 6 + Math.PI / 6;
+                    var m = new LinearMovement([new Velocity(4, t)]);
+                    for (var x = 0; x < Graphics.width; x += n)
+                        Game.createProjectile(
+                            x,
+                            Math.sin((x + r) / (Graphics.width + r) * Math.PI) * 64, 
+                            m,
+                        this);
+                }
+        }
+        this._fireTimer++;
+    },
+    //-----------------------------------------------------------------------
+    // * Efeito de morte
+    //-----------------------------------------------------------------------
+    death: function() {
+        this._deathCount++;
+        this._fireTimer = 0;
+
+        for (var i = 0; i < this._projectiles.length; i++)
+            this._projectiles[i].dispose();
+
+        if (this._deathCount == 3)
+            this.dispose();
+        else
+            this._health = this._maxHealth;
     }
 });

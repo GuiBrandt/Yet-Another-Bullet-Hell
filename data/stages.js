@@ -6,7 +6,8 @@
 "use strict";
 //=============================================================================
 // Primeira fase
-//  BGM: Touhou - Bad Apple (audio/badapple.mp3)
+//  BGM:    Touhou - Bad Apple (audio/badapple.mp3)
+//  BOSS:   Undertale - Megalovania (audio/megalovania.mp3)
 //=============================================================================
 Game.createStage({
     // Cores legais
@@ -122,7 +123,8 @@ Game.createStage({
 });
 //=============================================================================
 // Segunda fase
-//  BGM:    Tetris (audio/tetris.mp3)
+//  BGM:    Tetris Type-A (audio/tetris.mp3)
+//  BOSS:   U.N. Owen Was Her? (audio/unowenwasher.mp3)
 //=============================================================================
 Game.createStage({
     // Cores legais
@@ -298,14 +300,148 @@ Game.createStage({
     }
 });
 //=============================================================================
+// Terceira fase
+//  BGM:    
+//=============================================================================
+Game.createStage({
+    // Cores legais
+    backgroundColor:        0x000A42,
+    playerColor:            0xFFFFFF,
+    enemyColor:             0xAA00BD,
+    playerProjectileColor:  0x9D9DCF,
+    enemyProjectileColor:   0x00FF80,
+
+    // Música
+    bgm: ["audio/drwily.mp3"],
+
+    // Criação dos inimigos
+    initialize: function(noText) {
+        if (!noText)
+            TextManager.createStageText(Game.currentStageID, 'Drops');
+        else
+            __checkType(noText, 'boolean', 'text');
+
+        var e1 = Game.createEnemy(Graphics.width / 2, 96, 'static', 15, 'circle');
+        var e2 = Game.createEnemy(Graphics.width / 3, 64, 'circleRight', 10, 'spiral1');
+        var e3 = Game.createEnemy(Graphics.width * 2 / 3, 64, 'circleLeft', 10, 'spiral2');
+
+        function fallingEnemy() {
+            setTimeout(function() {
+                var e = Game.createEnemy(
+                    Graphics.width * Math.random(), 1, 
+                    'straightDown', 
+                    3, 
+                    'circle2'
+                );
+            }, Math.random() * 2000);
+        }
+        fallingEnemy();
+
+        this._i1 = setInterval(function() {
+            if (e1.health <= 0 && e2.health <= 0 && e3.health <= 0)
+                return;
+            fallingEnemy();
+        }.bind(this), 1500);
+    },
+
+    // Finalização do estágio
+    terminate: function() {
+        clearInterval(this._i1);
+    }
+});
+Game.createStage({
+    // Cores legais
+    backgroundColor:        0x000A42,
+    playerColor:            0xFFFFFF,
+    enemyColor:             0xAA00BD,
+    playerProjectileColor:  0x9D9DCF,
+    enemyProjectileColor:   0x00FF80,
+
+    // Música
+    bgm: ["audio/drwily.mp3"],
+
+    // Criação dos inimigos
+    initialize: function(noText) {
+        if (!noText)
+            TextManager.createStageText(Game.currentStageID, 'Bubbles');
+        else
+            __checkType(noText, 'boolean', 'text');
+
+        var e = Game.createEnemy(
+            Graphics.width / 4, 128, 
+            'static', 15, 'circlePlayer'
+        );
+
+        var e1 = Game.createEnemy(
+            Graphics.width * 3 / 4, 128, 
+            'static', 15, 'circlePlayer'
+        );
+
+        this._i1 = setInterval(function() {
+            if (e.health <= 0 && e1.health <= 0) return;
+            setTimeout(function() {
+                Game.createEnemy(
+                    Graphics.width / 6 * Math.random(), Math.random() * 54, 
+                    'straightDown2', 5, 'spinRight'
+                );
+            }, Math.random() * 1000);
+        }.bind(this), 1000);
+
+        this._i2 = setInterval(function() {
+            if (e.health <= 0 && e1.health <= 0) return;
+            setTimeout(function() {
+                Game.createEnemy(
+                    Graphics.width - Graphics.width / 6 * Math.random(), Math.random() * 54, 
+                    'straightDown2', 5, 'spinLeft'
+                );
+            }, Math.random() * 1000);
+        }.bind(this), 1000);
+    },
+
+    // Finalização do estágio
+    terminate: function() {
+        clearInterval(this._i1);
+        clearInterval(this._i2);
+    }
+});
+//-----------------------------------------------------------------------------
+// Boss
+//-----------------------------------------------------------------------------
+Game.createStage({
+    // Cores legais
+    backgroundColor:        0x000A42,
+    playerColor:            0xFFFFFF,
+    enemyColor:             0xAA00BD,
+    playerProjectileColor:  0x9D9DCF,
+    enemyProjectileColor:   0x00FF80,
+
+    // Música
+    bgm: ["audio/necrofantasia.mp3"],
+
+    // Criação dos inimigos
+    initialize: function(noText) {
+        if (!noText)
+            TextManager.createStageText('BOSS', 'Waves');
+        else
+            __checkType(noText, 'boolean', 'text');
+
+        var e = Game.createEnemy(Graphics.width / 2, 96, 'static', 25, 'boss3');
+        e.hitbox.width = e.hitbox.height = 20;
+
+    },
+
+    // Finalização do estágio
+    terminate: function() {}
+});
+//=============================================================================
 // Créditos
 //=============================================================================
 Game.createStage({
     // Cores legais
     backgroundColor:        0x000000,
-    playerColor:            0xffffff,
+    playerColor:            0xFFFFFF,
     enemyColor:             0x000000,
-    playerProjectileColor:  0xff0000,
+    playerProjectileColor:  0xFF0000,
     enemyProjectileColor:   0x000000,
 
     // Música
@@ -349,7 +485,7 @@ Game.createStage({
                                         TextManager.removeText(id);
                                         clearInterval(fadeout);
 
-                                        id = TextManager.createText('<strong>Música</strong><br>Bad Apple & U.N. Owen Was Her ~ 東方 (Touhou), ZUN<br>Tetris Type-A ~ Tetris<br>Megalovania ~ Undertale, Toby "Radiation" Fox',
+                                        id = TextManager.createText('<strong>Música</strong><br>Bad Apple & U.N. Owen Was Her & Necrofantasia ~ 東方 (Touhou), ZUN<br><br>Tetris Type-A ~ Tetris<br><br>Megalovania ~ Undertale, Toby "Radiation" Fox<br><br>Dr. Wily Stage 1 & 2 ~ Megaman 2, Takashi Tateishi',
                                             '50%', '50%', {
                                                 transform: 'translateX(-50%) translateY(-50%)',
                                                 fontSize: '24pt',
