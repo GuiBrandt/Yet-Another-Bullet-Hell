@@ -612,7 +612,7 @@ window.addEventListener('blur', function() {
 // Controla o desenho das coisas na tela
 //=============================================================================
 var Graphics = {
-    _bufferSize: 512,
+    _bufferSize: 2048,
     _backgroundColor: 0x000000,
     _invertColors: false,
     //-----------------------------------------------------------------------
