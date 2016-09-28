@@ -260,6 +260,13 @@ var TouchInput = {
         return max;
     }
 }
+document.addEventListener('mousedown', function(ev) {
+    TouchInput._action = true;
+});
+
+document.addEventListener('mouseup', function(ev) {
+    TouchInput._action = false;
+});
 //=============================================================================
 // ** Game
 //-----------------------------------------------------------------------------
@@ -720,8 +727,21 @@ var Graphics = {
     // * Inicializa o buffer de vértices para um quadrado
     //-----------------------------------------------------------------------
     _initVerticesBuffer: function() {
-        this._vbos = [];
-        this._vibs = [];
+        this._vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this._bufferSize * 8 * 8, gl.STREAM_DRAW);
+        gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, gl.FALSE, 0, 0);
+
+        this._vib = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._vib);
+        var indices = new Uint16Array(this._bufferSize * 6);
+        for (var c = 0; c * 6 < indices.length; c += 1) {
+            var i = c * 6, n = c * 4;
+            indices[i]    = n;   indices[i+1]  = n+1;
+            indices[i+2]  = n+3; indices[i+3]  = n;
+            indices[i+4]  = n+2; indices[i+5]  = n+3;
+        }
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
     },
     //-----------------------------------------------------------------------
     // * Desenha um grupo de objetos de mesma cor
@@ -729,28 +749,6 @@ var Graphics = {
     //      objects : Array com os objetos
     //-----------------------------------------------------------------------
     _drawObjects: function(color, objects) {
-        if (!this._vbos[color]) {
-            this._vbos[color] = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, this._vbos[color]);
-            gl.bufferData(gl.ARRAY_BUFFER, this._bufferSize * 8 * 8, gl.STREAM_DRAW);
-            gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, gl.FALSE, 0, 0);
-
-            this._vibs[color] = gl.createBuffer();
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._vibs[color]);
-            var indices = new Uint16Array(this._bufferSize * 6);
-            for (var c = 0; c * 6 < indices.length; c += 1) {
-                var i = c * 6, n = c * 4;
-                indices[i]    = n;
-                indices[i+1]  = n+1;
-                indices[i+2]  = n+3;
-
-                indices[i+3]  = n;
-                indices[i+4]  = n+2; 
-                indices[i+5]  = n+3;
-            }
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
-        }
-
         if (this._invertColors)
             gl.uniform3f(this._colorUniform,
                 1 - ((color >> 16) & 0xFF) / 255.0,

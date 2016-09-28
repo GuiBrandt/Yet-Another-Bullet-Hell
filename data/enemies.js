@@ -1,4 +1,4 @@
-//=============================================================================
+﻿//=============================================================================
 // enemies.js
 //
 // Padrões de ação de inimigos
@@ -620,13 +620,18 @@ Game.createActionPattern('boss2', {
         if (this._deathCount == 0) {
             
             if (Math.floor(this._fireTimer / 40) % 2 == 0 && this._fireTimer % 3 == 0) {
+                var v = 4.5;
                 var p = Game.createProjectile(this.hitbox.x, this.hitbox.y, 'straightDown2', this);
+		p.movement._velocities[0].module = v;
                 p.movement._velocities[0].angle += this._fireTimer / 60 * Math.PI * 2;
                 p = Game.createProjectile(this.hitbox.x, this.hitbox.y, 'straightUp2', this);
+		p.movement._velocities[0].module = v;
                 p.movement._velocities[0].angle += this._fireTimer / 60 * Math.PI * 2;
                 p = Game.createProjectile(this.hitbox.x, this.hitbox.y, 'straightRight2', this);
+		p.movement._velocities[0].module = v;
                 p.movement._velocities[0].angle += this._fireTimer / 60 * Math.PI * 2;
                 p = Game.createProjectile(this.hitbox.x, this.hitbox.y, 'straightLeft2', this);
+		p.movement._velocities[0].module = v;
                 p.movement._velocities[0].angle += this._fireTimer / 60 * Math.PI * 2;
             }
             

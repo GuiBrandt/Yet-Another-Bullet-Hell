@@ -309,19 +309,32 @@ Game.createMovement('targetPlayer2', [
 //-----------------------------------------------------------------------------
 // Movimento do jogador, controlado pelo teclado
 //=============================================================================
+
+var mouseX = 0, mouseY = 0;
+
+window.addEventListener('mousemove', function(ev) {
+    var canvas = Graphics._canvas,
+        rect = canvas.getBoundingClientRect(),
+        scaleX = canvas.width / rect.width,
+        scaleY = canvas.height / rect.height;
+    
+    mouseX = (ev.clientX - rect.left) * scaleX;
+    mouseY = (ev.clientY - rect.top) * scaleY;
+});
+
 Game.createMovement('player', [new Velocity(0, 0)],
     function() {
         if (!isTouchDevice()) {
-            this._velocities[0].module = Input.shiftPressed() ? 1.25 : 2;
-            var t = ([
-                0,
-                Math.PI * 3 / 4,    Math.PI / 2,        Math.PI / 4,
-                Math.PI,            0,                  Math.PI * 2,
-                Math.PI * 5 / 4,    Math.PI * 3 / 2,    Math.PI * 7 / 4
-            ])[Input.dir8()];
-            if (t == 0)
-                this._velocities[0].module = 0;
-            this._velocities[0].angle = t;
+            var px = Game.player.hitbox.x, 
+                py = Game.player.hitbox.y,
+                dx = mouseX - px,
+                dy = mouseY - py,
+                d  = Math.sqrt(dx*dx+dy*dy),
+                w = 100,
+                h = 100;
+            
+            this._velocities[0].module = d / Math.sqrt(w*w+h*h) * 4;
+            this._velocities[0].angle = Math.atan2(dy, dx);
         } else {
             this._velocities[0].module = TouchInput.getModule(2);
             this._velocities[0].angle = TouchInput.getAngle();
