@@ -425,7 +425,7 @@ Game.createStage({
         else
             __checkType(noText, 'boolean', 'text');
 
-        var e = Game.createEnemy(Graphics.width / 2, 96, 'static', 25, 'boss3');
+        var e = Game.createEnemy(Graphics.width / 2, 96, 'static', 35, 'boss3');
         e.hitbox.width = e.hitbox.height = 20;
 
     },

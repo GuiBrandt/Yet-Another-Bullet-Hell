@@ -796,31 +796,92 @@ Game.createActionPattern("boss3", {
                                 this);
                 }
                 break;
-            case 1:
-                if (this._fireTimer % 5 == 0) {
+            case 1:                
+                if (this._fireTimer % 16 == 0) {
+                    var density = 48;
+                    for (var i = 0; i < density; i++) {
+                        var m = new Movement([new Velocity(0, -Math.PI / 2), new Velocity(2, -Math.PI + Math.PI * i / density)]);
+                        m.onUpdate = function() {
+                            this._velocities[0].module -= 0.02;    
+                        };
+                        
                         Game.createProjectile(
-                            Graphics.width * Math.random(), Graphics.height - 1,
-                            'straightUp3', this
+                            this.hitbox.x, this.hitbox.y,
+                            m,
+                            this
                         );
+                    }
+                    AudioManager.playSe("audio/enemyShot01.m4a", 0.05, 0.5);
+                }
+                
+                if (this._fireTimer > 0 && this._fireTimer % 180 == 0) {
+                    var density = 10;
+                    var p = [];
+                    for (var i = 0; i < density; i++) {
+                        setTimeout(function(n) {
+                            p.push(Game.createProjectile(
+                                Graphics.width / 6, 
+                                Graphics.height / 6 + n * Graphics.height * 2 / 3 / density,
+                                'static', this
+                            ));
+                            
+                            p.push(Game.createProjectile(
+                                Graphics.width * 5 / 6, 
+                                Graphics.height / 6 + n * Graphics.height * 2 / 3 / density,
+                                'static', this
+                            ));
+                        }.bind(this), i * 16, i);
+                    }
+                    
+                    setTimeout(function () {
+                        for (var i = 0; i < p.length; i++)
+                            p[i].movement = Game.movement('targetPlayer');
+                    }, 100 + (density + 1) * 16);
                 }
                 break;
             case 2:
-                if (this._fireTimer < 60)
-                    break;
-                if (this._fireTimer % 16 == 0) {
-                    var r = Math.random() * Graphics.height;
-                    var n = Math.random() * 6 + 32;
-                    var t = Math.random() * Math.PI * 5 / 6 + Math.PI / 6;
-                    var m = new LinearMovement([new Velocity(4, t)]);
-                    for (var x = 0; x < Graphics.width; x += n)
+                
+                if (this._fireTimer % 43 == 0) {
+                    var density = 48;
+                    var a = Math.random() * density / 4;
+                    for (var i = 0; i < density; i++) {
+                        if (i > a + density / 16 && i < a + density / 16 + density / 8) continue;
+                        var m = new Movement([new Velocity(3, Math.PI * 2 * i / density)]);
+                        
                         Game.createProjectile(
-                            x,
-                            Math.sin((x + r) / (Graphics.width + r) * Math.PI) * 64, 
+                            this.hitbox.x, this.hitbox.y,
                             m,
-                        this);
+                            this
+                        );
+                    }
+                    AudioManager.playSe("audio/enemyShot01.m4a", 0.05, 0.5);
                 }
+
+                var radius = Math.random() * 16 + 8, density = radius + 4;
+                if (this._fireTimer % 16 == 0) {
+                    var ox = Math.random() * (Graphics.width - radius * 4) + radius * 2
+                        dx = Math.random() * Graphics.width / 4 - Graphics.width / 8 + Game.player.hitbox.x - ox,
+                        dy = Game.player.hitbox.y - this.hitbox.y, 
+                        targetTheta = Math.atan2(dy, dx);
+                    for (var i = 0; i < density; i++) {
+                        var t = Math.PI * 2 / density * i;
+                        Game.createProjectile(
+                            ox + Math.cos(t) * radius,
+                            this._hitbox.y + Math.sin(t) * radius,
+                            new Movement([new Velocity(3, targetTheta)]),
+                            this
+                        );
+                    }
+                }
+                break;
         }
         this._fireTimer++;
+        
+        if (this._deathCount > 0)
+            if (this.hitbox.x <= Graphics.width / 6)
+                this.movement = new Movement([new Velocity(1, 0)]);
+            else if (this.hitbox.x >= Graphics.width * 5 / 6)
+                this.movement = new Movement([new Velocity(1, Math.PI)]);
     },
     //-----------------------------------------------------------------------
     // * Efeito de morte
@@ -832,9 +893,13 @@ Game.createActionPattern("boss3", {
         for (var i = 0; i < this._projectiles.length; i++)
             this._projectiles[i].dispose();
 
-        if (this._deathCount == 3)
+        if (this._deathCount == 1)
+            this.movement = Game.movement("straightRight");
+        //else if (this._deathCount == 2)
+            //this.movement = Game.movement("static");
+        else if (this._deathCount == 3)
             this.dispose();
-        else
-            this._health = this._maxHealth;
+        
+        this._health = this._maxHealth;
     }
 });

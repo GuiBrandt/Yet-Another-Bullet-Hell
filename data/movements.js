@@ -1,4 +1,4 @@
-//=============================================================================
+﻿//=============================================================================
 // movements.js
 //
 // Tipos de movimento para os objetos do jogo
@@ -312,7 +312,7 @@ Game.createMovement('targetPlayer2', [
 Game.createMovement('player', [new Velocity(0, 0)],
     function() {
         if (!isTouchDevice()) {
-            this._velocities[0].module = Input.shiftPressed() ? 1.25 : 2;
+            this._velocities[0].module = Input.shiftPressed() ? 1.75 : 3;
             var t = ([
                 0,
                 Math.PI * 3 / 4,    Math.PI / 2,        Math.PI / 4,
