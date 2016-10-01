@@ -727,7 +727,7 @@ window.addEventListener('blur', function() {
 // Controla o desenho das coisas na tela
 //=============================================================================
 var Graphics = {
-    _bufferSize: 512,
+    _bufferSize: 2048,
     _backgroundColor: 0x000000,
     _invertColors: false,
     //-----------------------------------------------------------------------
@@ -842,8 +842,21 @@ var Graphics = {
     // * Inicializa o buffer de vértices para um quadrado
     //-----------------------------------------------------------------------
     _initVerticesBuffer: function() {
-        this._vbos = [];
-        this._vibs = [];
+        this._vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this._vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this._bufferSize * 8 * 8, gl.STREAM_DRAW);
+        gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, gl.FALSE, 0, 0);
+
+        this._vib = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._vib);
+        var indices = new Uint16Array(this._bufferSize * 6);
+        for (var c = 0; c * 6 < indices.length; c += 1) {
+            var i = c * 6, n = c * 4;
+            indices[i]    = n;   indices[i+1]  = n+1;
+            indices[i+2]  = n+3; indices[i+3]  = n;
+            indices[i+4]  = n+2; indices[i+5]  = n+3;
+        }
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
     },
     //-----------------------------------------------------------------------
     // * Desenha um grupo de objetos de mesma cor
@@ -851,28 +864,6 @@ var Graphics = {
     //      objects : Array com os objetos
     //-----------------------------------------------------------------------
     _drawObjects: function(color, objects) {
-        if (!this._vbos[color]) {
-            this._vbos[color] = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, this._vbos[color]);
-            gl.bufferData(gl.ARRAY_BUFFER, this._bufferSize * 8 * 8, gl.STREAM_DRAW);
-            gl.vertexAttribPointer(this._vertPosAttr, 2, gl.FLOAT, gl.FALSE, 0, 0);
-
-            this._vibs[color] = gl.createBuffer();
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._vibs[color]);
-            var indices = new Uint16Array(this._bufferSize * 6);
-            for (var c = 0; c * 6 < indices.length; c += 1) {
-                var i = c * 6, n = c * 4;
-                indices[i]    = n;
-                indices[i+1]  = n+1;
-                indices[i+2]  = n+3;
-
-                indices[i+3]  = n;
-                indices[i+4]  = n+2; 
-                indices[i+5]  = n+3;
-            }
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
-        }
-
         if (this._invertColors)
             gl.uniform3f(this._colorUniform,
                 1 - ((color >> 16) & 0xFF) / 255.0,
@@ -1864,7 +1855,9 @@ var Player = __class(GameObject, {
         } else if (this._fireTimer > 0)
             this._fireTimer = 0;
 
+        var dead = false;
         Game.forEachObject(function(obj) {
+            if (dead) return;
             if (((obj instanceof Projectile && obj.shooter instanceof Enemy) || obj instanceof Enemy) &&
                     obj.hitbox.collidesWith(this._hitbox)) {
                 Graphics.invertColors();
@@ -1873,6 +1866,7 @@ var Player = __class(GameObject, {
                     Graphics.invertColors();
                     Game.restart();
                 }, 500);
+                dead = true;
             }
         }.bind(this));
     },
@@ -1925,6 +1919,22 @@ Game.createLinearMovement('straightDown2', [
     new Velocity(6, Math.PI / 2)
 ]);
 //=============================================================================
+// ** straightUp3
+//-----------------------------------------------------------------------------
+// Move-se em linha reta para cima a uma velocidade de 2px/frame
+//=============================================================================
+Game.createLinearMovement('straightUp3', [
+    new Velocity(2, -Math.PI / 2)
+]);
+//=============================================================================
+// ** straightDown3
+//-----------------------------------------------------------------------------
+// Move-se em linha reta para baixo a uma velocidade de 2px/frame
+//=============================================================================
+Game.createLinearMovement('straightDown3', [
+    new Velocity(2, Math.PI / 2)
+]);
+//=============================================================================
 // ** straightLeft
 //-----------------------------------------------------------------------------
 // Move-se em linha reta para a esquerda a 4px/frame
@@ -1955,6 +1965,22 @@ Game.createMovement('straightLeft2', [
 //=============================================================================
 Game.createLinearMovement('straightRight2', [
     new Velocity(6, 0)
+]);
+//=============================================================================
+// ** straightLeft3
+//-----------------------------------------------------------------------------
+// Move-se em linha reta para a esquerda a 2px/frame
+//=============================================================================
+Game.createMovement('straightLeft3', [
+    new Velocity(2, Math.PI)
+]);
+//=============================================================================
+// ** straightRight3
+//-----------------------------------------------------------------------------
+// Move-se em linha reta para a direita a 2px/frame
+//=============================================================================
+Game.createLinearMovement('straightRight3', [
+    new Velocity(2, 0)
 ]);
 //=============================================================================
 // ** rightLeft
@@ -2107,13 +2133,13 @@ Game.createMovement('spiralDown2', [
 // Persegue o jogador a 4px/frame
 //=============================================================================
 Game.createMovement('chasePlayer', [
-        new Velocity(4, 0)
+        new Velocity(1, 0)
     ],
     function() {
         var dy = this._object.hitbox.y - Game.player.hitbox.y,
             dx = this._object.hitbox.x - Game.player.hitbox.x;
         var theta = Math.atan2(dy, dx);
-        this._velocities[0].angle = theta + Math.PI;
+        this._velocities[0].angle = (this._velocities[0].angle * 24 + theta + Math.PI) / 25;
     }
 );
 //=============================================================================
@@ -2133,7 +2159,27 @@ Game.createMovement('targetPlayer', [
             dx = this._object.hitbox.x - Game.player.hitbox.x;
         var theta = Math.atan2(dy, dx);
         this._velocities[0].angle = theta + Math.PI;
-    });
+    }
+);
+//=============================================================================
+// ** targetPlayer2
+//-----------------------------------------------------------------------------
+// Vai na direção do jogador a 6px/frame, diferente do `chasePlayer`, esse
+// movimento nunca muda de ângulo
+//=============================================================================
+Game.createMovement('targetPlayer2', [
+        new Velocity(6, 0)
+    ], 
+    function() {
+        if (this._targeted) 
+            return;
+        this._targeted = true;
+        var dy = this._object.hitbox.y - Game.player.hitbox.y,
+            dx = this._object.hitbox.x - Game.player.hitbox.x;
+        var theta = Math.atan2(dy, dx);
+        this._velocities[0].angle = theta + Math.PI;
+    }
+);
 //=============================================================================
 // ** player
 //-----------------------------------------------------------------------------
@@ -2142,7 +2188,7 @@ Game.createMovement('targetPlayer', [
 Game.createMovement('player', [new Velocity(0, 0)],
     function() {
         if (!isTouchDevice()) {
-            this._velocities[0].module = Input.shiftPressed() ? 1.25 : 3;
+            this._velocities[0].module = Input.shiftPressed() ? 1.75 : 3;
             var t = ([
                 0,
                 Math.PI * 3 / 4,    Math.PI / 2,        Math.PI / 4,
@@ -2217,11 +2263,11 @@ Game.createActionPattern('noexplode', {
     }
 });
 //=============================================================================
-// ** straightUp
+// ** spinRight
 //-----------------------------------------------------------------------------
-// Atira para cima
+// Atira uma barra giratória para a direita
 //=============================================================================
-Game.createActionPattern('straightUp', {
+Game.createActionPattern('spinRight', {
     //-----------------------------------------------------------------------
     // * Inicialização
     //-----------------------------------------------------------------------
@@ -2232,14 +2278,53 @@ Game.createActionPattern('straightUp', {
     // * Atualização
     //-----------------------------------------------------------------------
     update: function() {
-        if (this._fireTimer % 5 == 0)
-            Game.createProjectile(this._hitbox.x, this._hitbox.y, 'straightUp', this);
+        if (this._fireTimer % 48 < 8) {
+            Game.createProjectile(
+                this._hitbox.x, this._hitbox.y, 
+                new Movement([new Velocity(3 + (this._fireTimer % 32 + 1) / 8, 0)]), 
+                this
+            );
+        }
         this._fireTimer++;
     },
     //-----------------------------------------------------------------------
     // * Efeito de morte
     //-----------------------------------------------------------------------
-    death: function() {}
+    death: function() {
+        this.dispose();
+    }
+});
+//=============================================================================
+// ** spinLeft
+//-----------------------------------------------------------------------------
+// Atira uma barra giratória para a esquerda
+//=============================================================================
+Game.createActionPattern('spinLeft', {
+    //-----------------------------------------------------------------------
+    // * Inicialização
+    //-----------------------------------------------------------------------
+    initialize: function() {
+        this._fireTimer = 0;
+    },
+    //-----------------------------------------------------------------------
+    // * Atualização
+    //-----------------------------------------------------------------------
+    update: function() {
+        if (this._fireTimer % 48 < 8) {
+            Game.createProjectile(
+                this._hitbox.x, this._hitbox.y, 
+                new Movement([new Velocity(3 + (this._fireTimer % 32 + 1) / 8, Math.PI)]), 
+                this
+            );
+        }
+        this._fireTimer++;
+    },
+    //-----------------------------------------------------------------------
+    // * Efeito de morte
+    //-----------------------------------------------------------------------
+    death: function() {
+        this.dispose();
+    }
 });
 //=============================================================================
 // ** shootPlayer
@@ -2344,6 +2429,87 @@ Game.createActionPattern('circle1', {
     // * Efeito de morte
     //-----------------------------------------------------------------------
     death: explode
+});
+//=============================================================================
+// ** circle2
+//-----------------------------------------------------------------------------
+// Atira em círculos (menos que circle1)
+//=============================================================================
+Game.createActionPattern('circle2', {
+    //-----------------------------------------------------------------------
+    // * Inicialização
+    //-----------------------------------------------------------------------
+    initialize: function() {
+        this._fireTimer = 0;
+    },
+    //-----------------------------------------------------------------------
+    // * Atualização
+    //-----------------------------------------------------------------------
+    update: function() {
+        if (this._fireTimer % 36 == 0) {
+            for (var i = 0; i < 4; i++)
+                Game.createProjectile(
+                    this._hitbox.x, this._hitbox.y,
+                    new Movement([new Velocity(3, Math.PI * 2 / 4 * i + Math.PI / 4)]),
+                    this
+                );
+            AudioManager.playSe("audio/enemyShot01.m4a", 0.05, 0.5);
+        }
+        this._fireTimer++;
+    },
+    //-----------------------------------------------------------------------
+    // * Efeito de morte
+    //-----------------------------------------------------------------------
+    death: function() {
+        for (var i = 0; i < 3; i++)
+                Game.createProjectile(
+                    this._hitbox.x, this._hitbox.y,
+                    new Movement([new Velocity(3, Math.PI * 2 / 5 * i + Math.PI / 3)]),
+                    this
+                );
+        AudioManager.playSe("audio/enemyDeath.m4a", 0.2, 0.5);
+        this.dispose();
+    }
+});
+//=============================================================================
+// ** circlePlayer
+//-----------------------------------------------------------------------------
+// Atira círculos em linha reta na direção do jogador
+//=============================================================================
+Game.createActionPattern('circlePlayer', {
+    //-----------------------------------------------------------------------
+    // * Inicialização
+    //-----------------------------------------------------------------------
+    initialize: function() {
+        this._fireTimer = 0;
+    },
+    //-----------------------------------------------------------------------
+    // * Atualização
+    //-----------------------------------------------------------------------
+    update: function() {
+        var radius = 24, density = 32;
+        if (this._fireTimer % 56 == 0) {
+            var dx = Game.player.hitbox.x - this.hitbox.x, 
+                dy = Game.player.hitbox.y - this.hitbox.y, 
+                targetTheta = Math.atan2(dy, dx);
+            for (var i = 0; i < density; i++) {
+                var t = Math.PI * 2 / density * i;
+                Game.createProjectile(
+                    this._hitbox.x + Math.cos(t) * radius, 
+                    this._hitbox.y + Math.sin(t) * radius,
+                    new Movement([new Velocity(3, targetTheta)]),
+                    this
+                );
+            }
+        }
+        this._fireTimer++;
+    },
+    //-----------------------------------------------------------------------
+    // * Efeito de morte
+    //-----------------------------------------------------------------------
+    death: function() {
+        this.dispose();
+    }
 });
 //=============================================================================
 // ** spiral1
@@ -2635,11 +2801,6 @@ Game.createActionPattern('boss2', {
     //-----------------------------------------------------------------------
     initialize: function() {
         this._deathCount = 0;
-        this._colors = [
-            0xFF0000, 0x00FF00, 0x0000FF, 
-            0xFFFF00, 0x00FFFF, 0xFF7700, 
-            0x7700FF
-        ];
         this._fireTimer = 0;
         this._health = this._maxHealth / 2;
     },
@@ -2732,6 +2893,7 @@ Game.createActionPattern('boss2', {
     //-----------------------------------------------------------------------
     death: function() {
         this._deathCount++;
+        this._fireTimer = 0;
 
         switch (this._deathCount) {
             case 1:
@@ -2781,13 +2943,181 @@ Game.createActionPattern('boss2', {
     }
 });
 //=============================================================================
+// ** boss3
+//-----------------------------------------------------------------------------
+// Padrão de ação do terceiro boss. É muito complicado pra descrever nesse
+// cabeçalho, então só olhe o código e deduza
+//=============================================================================
+Game.createActionPattern("boss3", {
+    //-----------------------------------------------------------------------
+    // * Inicialização
+    //-----------------------------------------------------------------------
+    initialize: function() {
+        this._deathCount = 0;
+        this._fireTimer = 0;
+        this._projectiles = [];
+    },
+    //-----------------------------------------------------------------------
+    // * Atualização
+    //-----------------------------------------------------------------------
+    update: function() {
+        switch (this._deathCount) {
+            case 0:
+                if (this._fireTimer % 64 == 0) {
+                    if (this._fireTimer % 128 == 0)
+                        for (var x = 0; x < Graphics.width; x += 32)
+                            Game.createProjectile(
+                                x, 64 + Math.sin(x / 180 * Math.PI) * 64,
+                                'straightDown', this
+                            );
+                    else
+                        for (var x = 0; x < Graphics.width; x += 32)
+                            Game.createProjectile(
+                                x, 64 + Math.cos(x / 180 * Math.PI) * 64,
+                                'straightDown', this
+                            );
+                }
+
+                if (this._fireTimer % 60 == 0) {
+                    if (this._fireTimer % 180 == 0)
+                        for (var i = 0; i < 96; i++)
+                            Game.createProjectile(
+                                this.hitbox.x + Math.cos(Math.PI / 16 * i) * 96, 
+                                this.hitbox.y + Math.sin(Math.PI / 16 * i) * 96, 
+                                'targetPlayer2', 
+                                this);
+                    else if (this._fireTimer % 120 == 0)
+                        for (var i = 0; i < 96; i++)
+                            Game.createProjectile(
+                                Graphics.width / 3 + Math.cos(Math.PI / 16 * i) * 96, 
+                                this.hitbox.y + Math.sin(Math.PI / 16 * i) * 96, 
+                                'targetPlayer2', 
+                                this);
+                    else
+                        for (var i = 0; i < 96; i++)
+                            Game.createProjectile(
+                                Graphics.width * 2 / 3 + Math.cos(Math.PI / 16 * i) * 96, 
+                                this.hitbox.y + Math.sin(Math.PI / 16 * i) * 96, 
+                                'targetPlayer2', 
+                                this);
+                }
+                break;
+            case 1:                
+                if (this._fireTimer % 16 == 0) {
+                    var density = 48;
+                    for (var i = 0; i < density; i++) {
+                        var m = new Movement([new Velocity(0, -Math.PI / 2), new Velocity(2, -Math.PI + Math.PI * i / density)]);
+                        m.onUpdate = function() {
+                            this._velocities[0].module -= 0.02;    
+                        };
+                        
+                        Game.createProjectile(
+                            this.hitbox.x, this.hitbox.y,
+                            m,
+                            this
+                        );
+                    }
+                    AudioManager.playSe("audio/enemyShot01.m4a", 0.05, 0.5);
+                }
+                
+                if (this._fireTimer > 0 && this._fireTimer % 180 == 0) {
+                    var density = 10;
+                    var p = [];
+                    for (var i = 0; i < density; i++) {
+                        setTimeout(function(n) {
+                            p.push(Game.createProjectile(
+                                Graphics.width / 6, 
+                                Graphics.height / 6 + n * Graphics.height * 2 / 3 / density,
+                                'static', this
+                            ));
+                            
+                            p.push(Game.createProjectile(
+                                Graphics.width * 5 / 6, 
+                                Graphics.height / 6 + n * Graphics.height * 2 / 3 / density,
+                                'static', this
+                            ));
+                        }.bind(this), i * 16, i);
+                    }
+                    
+                    setTimeout(function () {
+                        for (var i = 0; i < p.length; i++)
+                            p[i].movement = Game.movement('targetPlayer');
+                    }, 100 + (density + 1) * 16);
+                }
+                break;
+            case 2:
+                
+                if (this._fireTimer % 43 == 0) {
+                    var density = 48;
+                    var a = Math.random() * density / 4;
+                    for (var i = 0; i < density; i++) {
+                        if (i > a + density / 16 && i < a + density / 16 + density / 8) continue;
+                        var m = new Movement([new Velocity(3, Math.PI * 2 * i / density)]);
+                        
+                        Game.createProjectile(
+                            this.hitbox.x, this.hitbox.y,
+                            m,
+                            this
+                        );
+                    }
+                    AudioManager.playSe("audio/enemyShot01.m4a", 0.05, 0.5);
+                }
+
+                var radius = Math.random() * 16 + 8, density = radius + 4;
+                if (this._fireTimer % 16 == 0) {
+                    var ox = Math.random() * (Graphics.width - radius * 4) + radius * 2
+                        dx = Math.random() * Graphics.width / 4 - Graphics.width / 8 + Game.player.hitbox.x - ox,
+                        dy = Game.player.hitbox.y - this.hitbox.y, 
+                        targetTheta = Math.atan2(dy, dx);
+                    for (var i = 0; i < density; i++) {
+                        var t = Math.PI * 2 / density * i;
+                        Game.createProjectile(
+                            ox + Math.cos(t) * radius,
+                            this._hitbox.y + Math.sin(t) * radius,
+                            new Movement([new Velocity(3, targetTheta)]),
+                            this
+                        );
+                    }
+                }
+                break;
+        }
+        this._fireTimer++;
+        
+        if (this._deathCount > 0)
+            if (this.hitbox.x <= Graphics.width / 6)
+                this.movement = new Movement([new Velocity(1, 0)]);
+            else if (this.hitbox.x >= Graphics.width * 5 / 6)
+                this.movement = new Movement([new Velocity(1, Math.PI)]);
+    },
+    //-----------------------------------------------------------------------
+    // * Efeito de morte
+    //-----------------------------------------------------------------------
+    death: function() {
+        this._deathCount++;
+        this._fireTimer = 0;
+
+        for (var i = 0; i < this._projectiles.length; i++)
+            this._projectiles[i].dispose();
+
+        if (this._deathCount == 1)
+            this.movement = Game.movement("straightRight");
+        //else if (this._deathCount == 2)
+            //this.movement = Game.movement("static");
+        else if (this._deathCount == 3)
+            this.dispose();
+        
+        this._health = this._maxHealth;
+    }
+});
+//=============================================================================
 // stages.js
 //
 // Fases do jogo
 //=============================================================================
 //=============================================================================
 // Primeira fase
-//  BGM: Touhou - Bad Apple (audio/badapple.mp3)
+//  BGM:    Touhou - Bad Apple (audio/badapple.mp3)
+//  BOSS:   Undertale - Megalovania (audio/megalovania.mp3)
 //=============================================================================
 Game.createStage({
     // Cores legais
@@ -2903,7 +3233,8 @@ Game.createStage({
 });
 //=============================================================================
 // Segunda fase
-//  BGM:    Tetris (audio/tetris.mp3)
+//  BGM:    Tetris Type-A (audio/tetris.mp3)
+//  BOSS:   U.N. Owen Was Her? (audio/unowenwasher.mp3)
 //=============================================================================
 Game.createStage({
     // Cores legais
@@ -3079,14 +3410,148 @@ Game.createStage({
     }
 });
 //=============================================================================
+// Terceira fase
+//  BGM:    
+//=============================================================================
+Game.createStage({
+    // Cores legais
+    backgroundColor:        0x000A42,
+    playerColor:            0xFFFFFF,
+    enemyColor:             0xAA00BD,
+    playerProjectileColor:  0x9D9DCF,
+    enemyProjectileColor:   0x00FF80,
+
+    // Música
+    bgm: ["audio/drwily.mp3"],
+
+    // Criação dos inimigos
+    initialize: function(noText) {
+        if (!noText)
+            TextManager.createStageText(Game.currentStageID, 'Drops');
+        else
+            __checkType(noText, 'boolean', 'text');
+
+        var e1 = Game.createEnemy(Graphics.width / 2, 96, 'static', 15, 'circle');
+        var e2 = Game.createEnemy(Graphics.width / 3, 64, 'circleRight', 10, 'spiral1');
+        var e3 = Game.createEnemy(Graphics.width * 2 / 3, 64, 'circleLeft', 10, 'spiral2');
+
+        function fallingEnemy() {
+            setTimeout(function() {
+                var e = Game.createEnemy(
+                    Graphics.width * Math.random(), 1, 
+                    'straightDown', 
+                    3, 
+                    'circle2'
+                );
+            }, Math.random() * 2000);
+        }
+        fallingEnemy();
+
+        this._i1 = setInterval(function() {
+            if (e1.health <= 0 && e2.health <= 0 && e3.health <= 0)
+                return;
+            fallingEnemy();
+        }.bind(this), 1500);
+    },
+
+    // Finalização do estágio
+    terminate: function() {
+        clearInterval(this._i1);
+    }
+});
+Game.createStage({
+    // Cores legais
+    backgroundColor:        0x000A42,
+    playerColor:            0xFFFFFF,
+    enemyColor:             0xAA00BD,
+    playerProjectileColor:  0x9D9DCF,
+    enemyProjectileColor:   0x00FF80,
+
+    // Música
+    bgm: ["audio/drwily.mp3"],
+
+    // Criação dos inimigos
+    initialize: function(noText) {
+        if (!noText)
+            TextManager.createStageText(Game.currentStageID, 'Bubbles');
+        else
+            __checkType(noText, 'boolean', 'text');
+
+        var e = Game.createEnemy(
+            Graphics.width / 4, 128, 
+            'static', 15, 'circlePlayer'
+        );
+
+        var e1 = Game.createEnemy(
+            Graphics.width * 3 / 4, 128, 
+            'static', 15, 'circlePlayer'
+        );
+
+        this._i1 = setInterval(function() {
+            if (e.health <= 0 && e1.health <= 0) return;
+            setTimeout(function() {
+                Game.createEnemy(
+                    Graphics.width / 6 * Math.random(), Math.random() * 54, 
+                    'straightDown2', 5, 'spinRight'
+                );
+            }, Math.random() * 1000);
+        }.bind(this), 1000);
+
+        this._i2 = setInterval(function() {
+            if (e.health <= 0 && e1.health <= 0) return;
+            setTimeout(function() {
+                Game.createEnemy(
+                    Graphics.width - Graphics.width / 6 * Math.random(), Math.random() * 54, 
+                    'straightDown2', 5, 'spinLeft'
+                );
+            }, Math.random() * 1000);
+        }.bind(this), 1000);
+    },
+
+    // Finalização do estágio
+    terminate: function() {
+        clearInterval(this._i1);
+        clearInterval(this._i2);
+    }
+});
+//-----------------------------------------------------------------------------
+// Boss
+//-----------------------------------------------------------------------------
+Game.createStage({
+    // Cores legais
+    backgroundColor:        0x000A42,
+    playerColor:            0xFFFFFF,
+    enemyColor:             0xAA00BD,
+    playerProjectileColor:  0x9D9DCF,
+    enemyProjectileColor:   0x00FF80,
+
+    // Música
+    bgm: ["audio/necrofantasia.mp3"],
+
+    // Criação dos inimigos
+    initialize: function(noText) {
+        if (!noText)
+            TextManager.createStageText('BOSS', 'Waves');
+        else
+            __checkType(noText, 'boolean', 'text');
+
+        var e = Game.createEnemy(Graphics.width / 2, 96, 'static', 35, 'boss3');
+        e.hitbox.width = e.hitbox.height = 20;
+
+    },
+
+    // Finalização do estágio
+    terminate: function() {}
+});
+//=============================================================================
 // Créditos
 //=============================================================================
 Game.createStage({
     // Cores legais
     backgroundColor:        0x000000,
-    playerColor:            0xffffff,
+    playerColor:            0xFFFFFF,
     enemyColor:             0x000000,
-    playerProjectileColor:  0xff0000,
+    playerProjectileColor:  0xFF0000,
     enemyProjectileColor:   0x000000,
 
     // Música
@@ -3130,7 +3595,7 @@ Game.createStage({
                                         TextManager.removeText(id);
                                         clearInterval(fadeout);
 
-                                        id = TextManager.createText('<strong>Música</strong><br>Bad Apple & U.N. Owen Was Her ~ 東方 (Touhou), ZUN<br>Tetris Type-A ~ Tetris<br>Megalovania ~ Undertale, Toby "Radiation" Fox',
+                                        id = TextManager.createText('<strong>Música</strong><br>Bad Apple & U.N. Owen Was Her & Necrofantasia ~ 東方 (Touhou), ZUN<br><br>Tetris Type-A ~ Tetris<br><br>Megalovania ~ Undertale, Toby "Radiation" Fox<br><br>Dr. Wily Stage 1 & 2 ~ Megaman 2, Takashi Tateishi',
                                             '50%', '50%', {
                                                 transform: 'translateX(-50%) translateY(-50%)',
                                                 fontSize: '24pt',
@@ -3174,6 +3639,7 @@ Game.createStage({
 //
 // Processo principal
 //=============================================================================
+
 // Inicialização
 Graphics.initialize();
 //Graphics._glDrawMode = gl.LINE_LOOP;
