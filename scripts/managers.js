@@ -605,7 +605,7 @@ window.addEventListener('blur', function() {
 // Controla o desenho das coisas na tela
 //=============================================================================
 var Graphics = {
-    _bufferSize: 2048,
+    _bufferSize: 1024,
     _backgroundColor: 0x000000,
     _invertColors: false,
     //-----------------------------------------------------------------------
@@ -717,7 +717,7 @@ var Graphics = {
         );
     },
     //-----------------------------------------------------------------------
-    // * Inicializa o buffer de vértices para um quadrado
+    // * Inicializa o buffer de vértices
     //-----------------------------------------------------------------------
     _initVerticesBuffer: function() {
         this._vbo = gl.createBuffer();
@@ -887,11 +887,14 @@ Object.defineProperties(Graphics, {
 // Controla a parte sonora do jogo
 //=============================================================================
 var AudioManager = {
+    _maxSe: 16,
     //-----------------------------------------------------------------------
     // * Inicializa o áudio
     //-----------------------------------------------------------------------
     initialize: function() {
         this._bgm = new Audio();
+        this._se = new Array(16);
+        this._nSe = 0;
         this._mute = false;
         this._currentBgm = "";
     },
@@ -929,6 +932,7 @@ var AudioManager = {
                 this._bgm.play();
             }.bind(this));
         }.bind(this));
+        this._bgm.load();
     },
     //-----------------------------------------------------------------------
     // * Pausa a BGM
@@ -958,6 +962,22 @@ var AudioManager = {
             se.playbackRate = pitch;
         }
         se.play();
+        
+        var i = 0;
+
+        for (; i < this._maxSe; i++) 
+            if (this._se[i] == null) {
+                this._se[i] = se;
+                break;
+            }
+        
+        se.onended = function() {
+            this._se[this.i] = null;
+        }.bind({_se: this._se, i: i % this._maxSe});
+
+        if (i == this._maxSe)
+            this._se[i] = se;
+
         return se;
     }
 };
